@@ -28,6 +28,7 @@
     "mocha": "^4.0.1"
   },
   "dependencies": {
-    "babel-polyfill": "^6.26.0"
+    "babel-polyfill": "^6.26.0",
+    "lodash": "^4.17.4"
   }
 }

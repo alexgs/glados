@@ -1,7 +1,7 @@
 import chai, { expect } from 'chai';
 import dirtyChai from 'dirty-chai';
 
-import GladosFactory from '../index';
+import GladosFactory, { messagesFactory } from '../index';
 
 chai.use( dirtyChai );
 
@@ -22,7 +22,7 @@ describe( 'Glados', function() {
                 delete options.domain;
                 expect( function() {
                     GladosFactory( options );
-                } ).to.throw( Error, 'some message' );
+                } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
             } );
 
             it( 'the `clientId` field is not a string' );
