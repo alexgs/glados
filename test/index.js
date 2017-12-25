@@ -25,9 +25,26 @@ describe( 'Glados', function() {
                 } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
             } );
 
-            it( 'the `clientId` field is not a string' );
-            it( 'the `clientSecret` field is not a string' );
-            it( 'the `callbackUrl` field is not a string' );
+            it( 'the `clientId` field is not a string', function() {
+                delete options.clientId;
+                expect( function() {
+                    GladosFactory( options );
+                } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
+            } );
+
+            it( 'the `clientSecret` field is not a string', function() {
+                delete options.clientSecret;
+                expect( function() {
+                    GladosFactory( options );
+                } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
+            } );
+
+            it( 'the `callbackUrl` field is not a string', function() {
+                delete options.callbackUrl;
+                expect( function() {
+                    GladosFactory( options );
+                } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
+            } );
         } );
 
     } );

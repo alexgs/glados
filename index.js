@@ -1,7 +1,10 @@
 import _ from 'lodash';
 
 const optionsTemplate = {
-    domain: _.isString
+    domain: _.isString,
+    clientId: _.isString,
+    clientSecret: _.isString,
+    callbackUrl: _.isString
 };
 
 export default function GladosFactory( options ) {
