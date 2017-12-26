@@ -1,5 +1,6 @@
 import chai, { expect } from 'chai';
 import dirtyChai from 'dirty-chai';
+import _ from 'lodash';
 
 import GladosFactory, { messagesFactory } from '../index';
 
@@ -71,6 +72,7 @@ describe( 'Glados', function() {
                 let glados = null;
 
                 before( function() {
+                    GladosFactory._reset();
                     GladosFactory.initialize( {
                         domain: 'example.com',
                         clientId: 'abcdefghijklmnopqrstuvwxyz',
@@ -83,11 +85,25 @@ describe( 'Glados', function() {
                     glados = GladosFactory.create();
                 } );
 
-                it( 'completeOAuth2' );
-                it( 'ensureAuthenticated' );
-                it( 'getLoginHandler' );
-                it( 'logout' );
-                it( 'startOAuth2' );
+                it( 'completeOAuth2', function() {
+                    expect( _.isFunction( glados.completeOAuth2 ) ).to.be.true();
+                } );
+
+                it( 'ensureAuthenticated', function() {
+                    expect( _.isFunction( glados.ensureAuthenticated ) ).to.be.true();
+                } );
+                
+                it( 'getLoginHandler', function() {
+                    expect( _.isFunction( glados.getLoginHandler ) ).to.be.true();
+                } );
+                
+                it( 'logout', function() {
+                    expect( _.isFunction( glados.logout ) ).to.be.true();
+                } );
+                
+                it( 'startOAuth2', function() {
+                    expect( _.isFunction( glados.startOAuth2 ) ).to.be.true();
+                } );
             } );
         } );
     } );
