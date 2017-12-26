@@ -116,4 +116,8 @@ describe( 'Glados', function() {
             } );
         } );
     } );
+
+    context( 'has a `startOAuth2` function that', function() {
+
+    } );
 } );
