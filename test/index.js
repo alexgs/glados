@@ -64,5 +64,31 @@ describe( 'Glados', function() {
             } );
         } );
 
+        context( 'has a `create` method. This method', function() {
+            it( 'throws an error if `initialize` is not called first' );
+
+            context( 'returns a `glados` object with the following functions:', function() {
+                let glados = null;
+
+                before( function() {
+                    GladosFactory.initialize( {
+                        domain: 'example.com',
+                        clientId: 'abcdefghijklmnopqrstuvwxyz',
+                        clientSecret: 'setec astronomy',
+                        callbackUrl: 'http://callback.url/hello'
+                    } );
+                } );
+
+                beforeEach( function() {
+                    glados = GladosFactory.create();
+                } );
+
+                it( 'completeOAuth2' );
+                it( 'ensureAuthenticated' );
+                it( 'getLoginHandler' );
+                it( 'logout' );
+                it( 'startOAuth2' );
+            } );
+        } );
     } );
 } );
