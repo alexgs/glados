@@ -1,5 +1,6 @@
 import chai, { expect } from 'chai';
 import dirtyChai from 'dirty-chai';
+import _ from 'lodash';
 
 import GladosFactory, { messagesFactory } from '../index';
 
@@ -10,6 +11,10 @@ describe( 'Glados', function() {
         context( 'has an `initialize` method. This method', function() {
             context( 'throws an error if the `options` object is missing a required field:', function() {
                 let options = null;
+
+                before( function() {
+                    GladosFactory._reset();
+                } );
 
                 beforeEach( function() {
                     options = {
@@ -64,5 +69,51 @@ describe( 'Glados', function() {
             } );
         } );
 
+        context( 'has a `create` method. This method', function() {
+            it( 'throws an error if `initialize` is not called first', function() {
+                GladosFactory._reset();
+                expect( function() {
+                    const glados = GladosFactory.create();
+                } ).to.throw( Error, messagesFactory.factoryNotInitialized() );
+            } );
+
+            context( 'returns a `glados` object with the following functions:', function() {
+                let glados = null;
+
+                before( function() {
+                    GladosFactory._reset();
+                    GladosFactory.initialize( {
+                        domain: 'example.com',
+                        clientId: 'abcdefghijklmnopqrstuvwxyz',
+                        clientSecret: 'setec astronomy',
+                        callbackUrl: 'http://callback.url/hello'
+                    } );
+                } );
+
+                beforeEach( function() {
+                    glados = GladosFactory.create();
+                } );
+
+                it( 'completeOAuth2', function() {
+                    expect( _.isFunction( glados.completeOAuth2 ) ).to.be.true();
+                } );
+
+                it( 'ensureAuthenticated', function() {
+                    expect( _.isFunction( glados.ensureAuthenticated ) ).to.be.true();
+                } );
+                
+                it( 'getLoginHandler', function() {
+                    expect( _.isFunction( glados.getLoginHandler ) ).to.be.true();
+                } );
+                
+                it( 'logout', function() {
+                    expect( _.isFunction( glados.logout ) ).to.be.true();
+                } );
+                
+                it( 'startOAuth2', function() {
+                    expect( _.isFunction( glados.startOAuth2 ) ).to.be.true();
+                } );
+            } );
+        } );
     } );
 } );
