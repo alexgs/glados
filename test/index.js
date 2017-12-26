@@ -12,6 +12,10 @@ describe( 'Glados', function() {
             context( 'throws an error if the `options` object is missing a required field:', function() {
                 let options = null;
 
+                before( function() {
+                    GladosFactory._reset();
+                } );
+
                 beforeEach( function() {
                     options = {
                         domain: 'example.com',
@@ -66,7 +70,12 @@ describe( 'Glados', function() {
         } );
 
         context( 'has a `create` method. This method', function() {
-            it( 'throws an error if `initialize` is not called first' );
+            it( 'throws an error if `initialize` is not called first', function() {
+                GladosFactory._reset();
+                expect( function() {
+                    const glados = GladosFactory.create();
+                } ).to.throw( Error, messagesFactory.factoryNotInitialized() );
+            } );
 
             context( 'returns a `glados` object with the following functions:', function() {
                 let glados = null;

@@ -13,6 +13,10 @@ const optionsTemplate = {
 // --- GLADOS FACTORY METHODS ---
 
 function create() {
+    if ( _.isNull( factoryOptions ) ) {
+        throw new Error( messagesFactory.factoryNotInitialized() );
+    }
+
     return {
         completeOAuth2,
         ensureAuthenticated,
@@ -33,7 +37,8 @@ function initialize( options ) {
 }
 
 export const messagesFactory = {
-    factoryAlreadyInitialized: () => `The Glados Factory has already been initialized`,
+    factoryAlreadyInitialized: () => `The Glados Factory has already been initialized.`,
+    factoryNotInitialized: () => `The Glados Factor must be initialized before \`create\` is called.`,
     optionsObjectNotCorrect: () => `The \`options\` object does not have the correct fields and types.`
 };
 
