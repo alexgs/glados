@@ -59,7 +59,7 @@ describe( 'Glados', function() {
                 expect( function() {
                     GladosFactory.initialize( options );
                     GladosFactory.initialize( options );
-                } ).to.throw( Error, 'missing message' );
+                } ).to.throw( Error, messagesFactory.factoryAlreadyInitialized() );
 
             } );
         } );
