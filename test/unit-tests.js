@@ -118,6 +118,18 @@ describe( 'Glados', function() {
     } );
 
     context( 'has a `startOAuth2` function that', function() {
+        it( 'throws an error if the factory is not initialized' );
+        context( 'returns a function that', function() {
+            it( 'has two parameters: `request` and `response`' );
+            it( 'calls a `redirect` method on the `response` argument with a URL' );
+            context( 'calls `redirect` with a URL having the following query parameters:', function() {
+                it( 'client_id' );
+                it( 'redirect_uri' );
+                it( 'response_type' );
+                it( 'scope' );
+                it( 'state' );
+            } );
+        } );
 
     } );
 } );

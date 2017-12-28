@@ -4,7 +4,9 @@
   "description": "Express middleware for server-side OAuth2",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha test/unit-tests.js",
+    "test:integration": "mocha test/integration-tests.js",
+    "test:spike": "mocha test/spike.js"
   },
   "repository": {
     "type": "git",
