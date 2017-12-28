@@ -50,9 +50,9 @@ function initialize( options ) {
 
     const derivedOptions = {
         authorizationUrl: 'https://' + options.domain + '/authorize',
-        tokenUrl:         'https://' + options.domain + '/oauth/token',
-        userInfoUrl:      'https://' + options.domain + '/userinfo',
-        apiUrl:           'https://' + options.domain + '/api'
+        tokenUrl: 'https://' + options.domain + '/oauth/token',
+        userInfoUrl: 'https://' + options.domain + '/userinfo',
+        apiUrl: 'https://' + options.domain + '/api'
     };
     factoryOptions = _.merge( {}, options, derivedOptions );
     // console.log( `45: ${JSON.stringify( factoryOptions, null, 4 )}` );
@@ -102,47 +102,22 @@ function startOAuth2() {
     if ( _.isNull( factoryOptions ) || !_.conformsTo( factoryOptions, allFactoryOptionsFields ) ) {
         throw new Error( messagesFactory.illegalState() );
     }
-    // const params = {
-    //     clientId: factoryOptions.clientId,
-    //     domain: factoryOptions.domain,
-    //     redirectUri: factoryOptions.callbackUrl,
-    //     audience: `https://${factoryOptions.domain}/userinfo`,
-    //     responseType: 'code',
-    //     scope: 'openid email'
-    // };
 
     // TODO Run this asynchronously
-    const csrfToken = crypto.randomBytes(32).toString('base64');
+    const csrfToken = crypto.randomBytes( 32 ).toString( 'base64' );
 
     const oauthParams = {
         audience: `https://${factoryOptions.domain}/userinfo`,
         client_id: factoryOptions.clientId,
-        // connection: '',
-        // prompt: '',
         redirect_uri: factoryOptions.callbackUrl,
-        // redirect_uri: 'https://calypso.sword:5426/login/auth-complete',
         response_type: 'code',
         scope: 'openid email',
         state: csrfToken
     };
 
-    // const actualQueryParams = {
-    //     url: 'https://ickyzoo.auth0.com/login',
-    //     client: 'JoVzWhQOwQwIkialwg6uY5GfOAhfdI_A',
-    //     protocol: 'oauth2',
-    //     redirect_uri: 'https://calypso.sword:5426/login/auth-complete',
-    //     audience: 'https://ickyzoo.auth0.com/userinfo',
-    //     response_type: 'code',
-    //     scope: 'openid email',
-    //     state: 'ICYdxeXGLiWmUE_8CHl3WbELnfJQt3Zz'
-    // };
-
-    // console.log( `102: ${JSON.stringify( factoryOptions, null, 4 )}` );
     let authorizationUrlParts = url.parse( factoryOptions.authorizationUrl, true );
     authorizationUrlParts.query = _.merge( {}, authorizationUrlParts.query, oauthParams );
-    let authorizationUrl = url.format(authorizationUrlParts);
-    // console.log( JSON.stringify( authorizationUrlParts, null, 4 ) );
-    // console.log( authorizationUrl );
+    let authorizationUrl = url.format( authorizationUrlParts );
 
     // superagent
     //     .get( authorizationUrl )
