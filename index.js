@@ -5,11 +5,22 @@ import url from 'url';
 
 let factoryOptions = null;
 
-const optionsTemplate = {
-    domain: _.isString,
+const allFactoryOptionsFields = {
+    apiUrl: _.isString,
+    authorizationUrl: _.isString,
+    callbackUrl: _.isString,
     clientId: _.isString,
     clientSecret: _.isString,
-    callbackUrl: _.isString
+    domain: _.isString,
+    tokenUrl: _.isString,
+    userInfoUrl: _.isString
+};
+
+const optionsTemplate = {
+    callbackUrl: _.isString,
+    clientId: _.isString,
+    clientSecret: _.isString,
+    domain: _.isString
 };
 
 
@@ -49,7 +60,8 @@ function initialize( options ) {
 
 export const messagesFactory = {
     factoryAlreadyInitialized: () => `The Glados Factory has already been initialized.`,
-    factoryNotInitialized: () => `The Glados Factor must be initialized before \`create\` is called.`,
+    factoryNotInitialized: () => `The Glados Factory must be initialized before \`create\` is called.`,
+    illegalState: () => `Glados or her factory is in an illegal state`,
     optionsObjectNotCorrect: () => `The \`options\` object does not have the correct fields and types.`
 };
 
@@ -87,6 +99,9 @@ function getLoginHandler() {}
 function logout() {}
 
 function startOAuth2() {
+    if ( _.isNull( factoryOptions ) || !_.conformsTo( factoryOptions, allFactoryOptionsFields ) ) {
+        throw new Error( messagesFactory.illegalState() );
+    }
     // const params = {
     //     clientId: factoryOptions.clientId,
     //     domain: factoryOptions.domain,
@@ -104,30 +119,30 @@ function startOAuth2() {
         client_id: factoryOptions.clientId,
         // connection: '',
         // prompt: '',
-        // redirect_uri: factoryOptions.callbackUrl,
-        redirect_uri: 'https://calypso.sword:5426/login/auth-complete',
+        redirect_uri: factoryOptions.callbackUrl,
+        // redirect_uri: 'https://calypso.sword:5426/login/auth-complete',
         response_type: 'code',
         scope: 'openid email',
         state: csrfToken
     };
 
-    const actualQueryParams = {
-        url: 'https://ickyzoo.auth0.com/login',
-        client: 'JoVzWhQOwQwIkialwg6uY5GfOAhfdI_A',
-        protocol: 'oauth2',
-        redirect_uri: 'https://calypso.sword:5426/login/auth-complete',
-        audience: 'https://ickyzoo.auth0.com/userinfo',
-        response_type: 'code',
-        scope: 'openid email',
-        state: 'ICYdxeXGLiWmUE_8CHl3WbELnfJQt3Zz'
-    };
+    // const actualQueryParams = {
+    //     url: 'https://ickyzoo.auth0.com/login',
+    //     client: 'JoVzWhQOwQwIkialwg6uY5GfOAhfdI_A',
+    //     protocol: 'oauth2',
+    //     redirect_uri: 'https://calypso.sword:5426/login/auth-complete',
+    //     audience: 'https://ickyzoo.auth0.com/userinfo',
+    //     response_type: 'code',
+    //     scope: 'openid email',
+    //     state: 'ICYdxeXGLiWmUE_8CHl3WbELnfJQt3Zz'
+    // };
 
     // console.log( `102: ${JSON.stringify( factoryOptions, null, 4 )}` );
     let authorizationUrlParts = url.parse( factoryOptions.authorizationUrl, true );
     authorizationUrlParts.query = _.merge( {}, authorizationUrlParts.query, oauthParams );
     let authorizationUrl = url.format(authorizationUrlParts);
-    console.log( JSON.stringify( authorizationUrlParts, null, 4 ) );
-    console.log( authorizationUrl );
+    // console.log( JSON.stringify( authorizationUrlParts, null, 4 ) );
+    // console.log( authorizationUrl );
 
     // superagent
     //     .get( authorizationUrl )

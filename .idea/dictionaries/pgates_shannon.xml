@@ -4,6 +4,7 @@
       <w>crypto</w>
       <w>csrf</w>
       <w>glados</w>
+      <w>sinon</w>
     </words>
   </dictionary>
 </component>
