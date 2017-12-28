@@ -4,6 +4,7 @@ import _ from 'lodash';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import url from 'url';
+import defaultCsrfStore from '../lib/csrf-token-store';
 
 import GladosFactory, { messagesFactory } from '../index';
 
@@ -252,5 +253,37 @@ describe( 'Glados', function() {
             } );
         } );
 
+    } );
+
+    context( 'has a `completeOAuth2` function that', function() {
+        let expressApp = {
+            locals: { }
+        };
+        let glados = null;
+        const gladosOptions = {
+            callbackUrl: 'https://moving-pictures.yyz/login/auth-complete',
+            clientId: 'tom-sawyer',
+            clientSecret: 'a-brilliant-red-barchetta-from-a-better-vanished-time',
+            domain: 'rush.auth0.com'
+        };
+        let request = null;
+        let token = null;
+
+        beforeEach( function() {
+            GladosFactory._reset();
+            defaultCsrfStore._reset();
+            token = defaultCsrfStore.generateToken();
+            request = {
+                hostname: 'moving-pictures.yyz',
+                protocol: 'https',
+                query: {
+                    code: 'jaWcnFTvfS00SfSA',
+                    state: token
+                }
+            };
+
+            GladosFactory.initialize( gladosOptions, expressApp, defaultCsrfStore );
+            glados = GladosFactory.create();
+        } );
     } );
 } );
