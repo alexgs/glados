@@ -1,8 +1,9 @@
-import crypto from 'crypto';
 import _ from 'lodash';
 import superagent from 'superagent';
 import url from 'url';
+import defaultCsrfStore from './lib/csrf-token-store';
 
+let csrf = null;
 let factoryOptions = null;
 
 const allFactoryOptionsFields = {
@@ -16,7 +17,7 @@ const allFactoryOptionsFields = {
     userInfoUrl: _.isString
 };
 
-const optionsTemplate = {
+const optionsFields = {
     callbackUrl: _.isString,
     clientId: _.isString,
     clientSecret: _.isString,
@@ -40,13 +41,17 @@ function create() {
     };
 }
 
-function initialize( options ) {
-    if ( !_.conformsTo( options, optionsTemplate ) ) {
+function initialize( options, app, csrfStore = defaultCsrfStore ) {
+    if ( !_.conformsTo( options, optionsFields ) ) {
         throw new Error( messagesFactory.optionsObjectNotCorrect() );
+    }
+    if ( !_.isObject( app ) || !_.has( app, 'locals' ) ) {
+        throw new Error( messagesFactory.appIsNotValid() );
     }
     if ( !_.isNull( factoryOptions ) ) {
         throw new Error( messagesFactory.factoryAlreadyInitialized() );
     }
+    // TODO Validations for `csrfStore`
 
     const derivedOptions = {
         authorizationUrl: 'https://' + options.domain + '/authorize',
@@ -55,12 +60,16 @@ function initialize( options ) {
         apiUrl: 'https://' + options.domain + '/api'
     };
     factoryOptions = _.merge( {}, options, derivedOptions );
-    // console.log( `45: ${JSON.stringify( factoryOptions, null, 4 )}` );
+
+    csrf = csrfStore;
+    csrf.initialize( app.locals );
 }
 
 export const messagesFactory = {
+    appIsNotValid: () => `The \`app\` argument must be an object with a \`locals\` field.`,
     factoryAlreadyInitialized: () => `The Glados Factory has already been initialized.`,
     factoryNotInitialized: () => `The Glados Factory must be initialized before \`create\` is called.`,
+    illegalRequest: () => `The request received by the callback does not contain the necessary data`,
     illegalState: () => `Glados or her factory is in an illegal state`,
     optionsObjectNotCorrect: () => `The \`options\` object does not have the correct fields and types.`
 };
@@ -73,6 +82,10 @@ export const messagesFactory = {
  */
 function _reset() {
     factoryOptions = null;
+    if ( !_.isNull( csrf ) ) {
+        csrf._reset();
+        csrf = null;
+    }
 }
 
 const GladosFactory = {
@@ -103,9 +116,7 @@ function startOAuth2() {
         throw new Error( messagesFactory.illegalState() );
     }
 
-    // TODO Run this asynchronously
-    const csrfToken = crypto.randomBytes( 32 ).toString( 'base64' );
-
+    const csrfToken = csrf.generateToken();
     const oauthParams = {
         audience: `https://${factoryOptions.domain}/userinfo`,
         client_id: factoryOptions.clientId,
@@ -131,3 +142,6 @@ function startOAuth2() {
         response.redirect( authorizationUrl );
     };
 }
+
+
+// --- UTILITY FUNCTIONS ---

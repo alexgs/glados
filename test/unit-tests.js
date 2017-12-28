@@ -13,67 +13,102 @@ chai.use( dirtyChai );
 describe( 'Glados', function() {
     context( 'is created from a Glados Factory that', function() {
         context( 'has an `initialize` method. This method', function() {
-            context( 'throws an error if the `options` object is missing a required field:', function() {
-                let options = null;
+            let app = null;
+            let options = null;
 
-                before( function() {
-                    GladosFactory._reset();
-                } );
+            beforeEach( function() {
+                GladosFactory._reset();
+                app = {
+                    locals: {
+                        placeholder: 'ok'
+                    }
+                };
+                options = {
+                    callbackUrl: 'http://callback.url/hello',
+                    clientId: 'abcdefghijklmnopqrstuvwxyz',
+                    clientSecret: 'setec astronomy',
+                    domain: 'example.com'
+                };
+            } );
 
-                beforeEach( function() {
-                    options = {
-                        domain: 'example.com',
-                        clientId: 'abcdefghijklmnopqrstuvwxyz',
-                        clientSecret: 'setec astronomy',
-                        callbackUrl: 'http://callback.url/hello'
-                    };
-                } );
+            it( 'throws an error if the `app` argument is missing a `locals` field', function() {
+                expect( function() {
+                    GladosFactory.initialize( options, {} );
+                } ).to.throw( Error, messagesFactory.appIsNotValid() );
+            } );
 
-                it( 'the `domain` field must be a string', function() {
-                    delete options.domain;
+            context( 'throws an error if the `options` argument is missing a required field:', function() {
+                it( 'the `callbackUrl` field must be a string', function() {
+                    delete options.callbackUrl;
                     expect( function() {
-                        GladosFactory.initialize( options );
+                        GladosFactory.initialize( options, app );
                     } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
                 } );
 
                 it( 'the `clientId` field must be a string', function() {
                     delete options.clientId;
                     expect( function() {
-                        GladosFactory.initialize( options );
+                        GladosFactory.initialize( options, app );
                     } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
                 } );
 
                 it( 'the `clientSecret` field must be a string', function() {
                     delete options.clientSecret;
                     expect( function() {
-                        GladosFactory.initialize( options );
+                        GladosFactory.initialize( options, app );
                     } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
                 } );
 
-                it( 'the `callbackUrl` field must be a string', function() {
-                    delete options.callbackUrl;
+                it( 'the `domain` field must be a string', function() {
+                    delete options.domain;
                     expect( function() {
-                        GladosFactory.initialize( options );
+                        GladosFactory.initialize( options, app );
                     } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
                 } );
             } );
 
             it( 'throws an error if called more than once', function() {
-                const options = {
-                    domain: 'example.com',
-                    clientId: 'abcdefghijklmnopqrstuvwxyz',
-                    clientSecret: 'setec astronomy',
-                    callbackUrl: 'http://callback.url/hello'
-                };
                 expect( function() {
-                    GladosFactory.initialize( options );
-                    GladosFactory.initialize( options );
+                    GladosFactory.initialize( options, app );
+                    GladosFactory.initialize( options, app );
                 } ).to.throw( Error, messagesFactory.factoryAlreadyInitialized() );
 
+            } );
+
+            it( 'initializes a CSRF token store', function() {
+                const spy = sinon.spy();
+                const csrfStore = {
+                    initialize: spy,
+                    _reset: () => { /* no op */ }
+                };
+
+                GladosFactory.initialize( options, app, csrfStore );
+                expect( spy ).to.have.been.calledOnce();
             } );
         } );
 
         context( 'has a `create` method. This method', function() {
+            let app = null;
+            let options = null;
+
+            before( function() {
+                GladosFactory._reset();
+            } );
+
+            beforeEach( function() {
+                app = {
+                    locals: {
+                        placeholder: 'ok'
+                    }
+                };
+                options = {
+                    callbackUrl: 'http://callback.url/hello',
+                    clientId: 'abcdefghijklmnopqrstuvwxyz',
+                    clientSecret: 'setec astronomy',
+                    domain: 'example.com'
+                };
+            } );
+
             it( 'throws an error if `initialize` is not called first', function() {
                 GladosFactory._reset();
                 expect( function() {
@@ -86,12 +121,7 @@ describe( 'Glados', function() {
 
                 before( function() {
                     GladosFactory._reset();
-                    GladosFactory.initialize( {
-                        domain: 'example.com',
-                        clientId: 'abcdefghijklmnopqrstuvwxyz',
-                        clientSecret: 'setec astronomy',
-                        callbackUrl: 'http://callback.url/hello'
-                    } );
+                    GladosFactory.initialize( options, app );
                 } );
 
                 beforeEach( function() {
@@ -122,17 +152,20 @@ describe( 'Glados', function() {
     } );
 
     context( 'has a `startOAuth2` function that', function() {
+        let expressApp = {
+            locals: { }
+        };
         let glados = null;
         const gladosOptions = {
-            domain: 'rush.auth0.com',
+            callbackUrl: 'https://moving-pictures.yyz/login/auth-complete',
             clientId: 'tom-sawyer',
             clientSecret: 'a-brilliant-red-barchetta-from-a-better-vanished-time',
-            callbackUrl: 'https://moving-pictures.yyz/login/auth-complete'
+            domain: 'rush.auth0.com'
         };
 
         beforeEach( function() {
             GladosFactory._reset();
-            GladosFactory.initialize( gladosOptions );
+            GladosFactory.initialize( gladosOptions, expressApp );
             glados = GladosFactory.create();
         } );
 
