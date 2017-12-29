@@ -65,11 +65,11 @@ describe( 'Glados', function() {
                     clientSecret: 'setec astronomy',
                     callbackUrl: 'http://callback.url/hello'
                 };
+
                 expect( function() {
                     GladosFactory.initialize( options );
                     GladosFactory.initialize( options );
                 } ).to.throw( Error, messagesFactory.factoryAlreadyInitialized() );
-
             } );
         } );
 
