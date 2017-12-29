@@ -123,7 +123,7 @@ Content-Type: application/json
 */
 
     // Return an Express middleware function
-    return function( request, response ) {
+    return function( request, response, next ) {
         if ( !_.conformsTo( request, requestFields ) ) {
             throw new Error( messagesFactory.illegalRequest() );
         }
@@ -169,11 +169,22 @@ Content-Type: application/json
                 } )
             )
             .then( data => {
-                // TODO Verify `id_token`, initiate session store, set cookie, etc.
                 // TODO [Future] Pass a custom handler to the `completeOAuth2` function, and execute it here
+                // TODO Verify `id_token`, initiate session store, set cookie (use `response.cookie`), etc.
+                /*
+                    + This is going to need some helper functions like `utils.verifyAuth0IdToken` and its confederates in
+                        the "express prototype app" project.
+                    + Look at how Passport handles the different failure modes of the `done` callback of the "verify"
+                        method (e.g. `utils.verifyAuth0IdToken`)
+                    + I will probably want some sort of "login failure" page to display flash messages
+                    + I need to setup a fake OAuth2 server, so I can test this function against a back end
+                    + I also need to setup an Express server for testing these functions in context
+                    + I probably want to put my `spawn` script into a separate module and use it for launching these;
+                        there's also a thing for launching dual processes, which will be useful, too.
+                 */
             } )
             .then( () => {
-                // TODO Redirect to callback URL
+                // TODO Call `next()`; let the route itself handle redirection
             } )
             .catch( error => {
                 // TODO

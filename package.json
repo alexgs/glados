@@ -19,6 +19,7 @@
   },
   "license": "BSD-3-Clause",
   "devDependencies": {
+    "@philgs/spawn": "^1.0.0",
     "@types/chai": "^4.0.10",
     "@types/mocha": "^2.2.45",
     "babel-cli": "^6.26.0",
