@@ -1,12 +1,25 @@
+import crypto from 'crypto';
 import _ from 'lodash';
+import url from 'url';
 
 let factoryOptions = null;
 
-const optionsTemplate = {
-    domain: _.isString,
+const allFactoryOptionsFields = {
+    apiUrl: _.isString,
+    authorizationUrl: _.isString,
+    callbackUrl: _.isString,
     clientId: _.isString,
     clientSecret: _.isString,
-    callbackUrl: _.isString
+    domain: _.isString,
+    tokenUrl: _.isString,
+    userInfoUrl: _.isString
+};
+
+const optionsTemplate = {
+    callbackUrl: _.isString,
+    clientId: _.isString,
+    clientSecret: _.isString,
+    domain: _.isString
 };
 
 
@@ -33,12 +46,20 @@ function initialize( options ) {
     if ( !_.isNull( factoryOptions ) ) {
         throw new Error( messagesFactory.factoryAlreadyInitialized() );
     }
-    factoryOptions = options;
+
+    const derivedOptions = {
+        authorizationUrl: 'https://' + options.domain + '/authorize',
+        tokenUrl: 'https://' + options.domain + '/oauth/token',
+        userInfoUrl: 'https://' + options.domain + '/userinfo',
+        apiUrl: 'https://' + options.domain + '/api'
+    };
+    factoryOptions = _.merge( {}, options, derivedOptions );
 }
 
 export const messagesFactory = {
     factoryAlreadyInitialized: () => `The Glados Factory has already been initialized.`,
-    factoryNotInitialized: () => `The Glados Factor must be initialized before \`create\` is called.`,
+    factoryNotInitialized: () => `The Glados Factory must be initialized before \`create\` is called.`,
+    illegalState: () => `Glados or her factory is in an illegal state`,
     optionsObjectNotCorrect: () => `The \`options\` object does not have the correct fields and types.`
 };
 
@@ -71,4 +92,28 @@ function getLoginHandler() {}
 
 function logout() {}
 
-function startOAuth2() {}
+function startOAuth2() {
+    if ( _.isNull( factoryOptions ) || !_.conformsTo( factoryOptions, allFactoryOptionsFields ) ) {
+        throw new Error( messagesFactory.illegalState() );
+    }
+
+    const csrfToken = crypto.randomBytes( 32 ).toString( 'base64' );
+
+    const oauthParams = {
+        audience: `https://${factoryOptions.domain}/userinfo`,
+        client_id: factoryOptions.clientId,
+        redirect_uri: factoryOptions.callbackUrl,
+        response_type: 'code',
+        scope: 'openid email',
+        state: csrfToken
+    };
+
+    let authorizationUrlParts = url.parse( factoryOptions.authorizationUrl, true );
+    authorizationUrlParts.query = _.merge( {}, authorizationUrlParts.query, oauthParams );
+    let authorizationUrl = url.format( authorizationUrlParts );
+
+    // Return an Express middleware function
+    return function( request, response ) {
+        response.redirect( authorizationUrl );
+    };
+}
