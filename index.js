@@ -1,11 +1,16 @@
 import oauth2 from './lib/oauth2';
+import session from './lib/session';
 
 function getCookieMiddleware() {
     // TODO Copy the guts of the `cookie-parser` library here
 }
 
 function getSessionMiddleware() {
-
+    return function( request, response, next ) {
+    //     session.initializeSessionCookie( request, response )
+    //         .then( sessionId => next() );
+        next();
+    }
 }
 
 const glados = {
