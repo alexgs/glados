@@ -1,8 +1,10 @@
 import debugAgent from 'debug';
 import _ from 'lodash';
+import ms from 'ms';
 import superagent from 'superagent';
 import url from 'url';
 import defaultCsrfStore from './lib/csrf-token-store';
+import jwt from './lib/json-web-tokens';
 
 const debug = debugAgent( 'glados:auth' );
 
@@ -112,7 +114,7 @@ export default GladosFactory;
 
 // --- GLADOS OBJECT FUNCTIONS ---
 
-function completeOAuth2() {
+function completeOAuth2( publicKey ) {
     // Return an Express middleware function *before* the factory is initialized
     return function( request, response, next ) {
         if ( _.isNull( factoryOptions ) ) {
@@ -122,25 +124,12 @@ function completeOAuth2() {
             throw new Error( messagesFactory.illegalState() );
         }
 
-        /*
-        "Get Token" Request
-        POST https://ickyzoo.auth0.com/oauth/token
-        Content-Type: application/json
-        {
-          "grant_type": "authorization_code",
-          "client_id": "JoVzWhQOwQwIkialwg6uY5GfOAhfdI_A",
-          "client_secret": "n8K9Yfi8yGwCWKUZyk01A8t9MjJVsKzasUlHpXrpfMzhZr48ahvOrVMAc_eiwAZo",
-          "code": "AUTHORIZATION_CODE",
-          "redirect_uri": https://atlas.sword:5481/login/auth-complete
-        }
-        */
-
         if ( !_.conformsTo( request, requestFields ) ) {
             throw new Error( messagesFactory.illegalRequest() );
         }
 
         if ( !csrf.verifyToken( request.query.state ) ) {
-            // TODO Allow this to be customized
+            // TODO [Future] Allow this to be customized
             // TODO This seems to throw an error, "Error: Can't set headers after they are sent."
             response.redirect( '/' ).end();
         }
@@ -153,18 +142,6 @@ function completeOAuth2() {
             redirect_uri: factoryOptions.callbackUrl
         };
 
-        /*
-        "Get Token" Response
-        HTTP/1.1 200 OK
-        Content-Type: application/json
-        {
-          "access_token":"eyJz93a...k4laUWw",
-          "refresh_token":"GEbRxBN...edjnXbL",
-          "id_token":"eyJ0XAi...4faeEoQ",
-          "token_type":"Bearer",
-          "expires_in":86400
-        }
-        */
         superagent.post( factoryOptions.tokenUrl )
             .send( tokenUrlParams )
             .then( agentResponse => {
@@ -178,32 +155,34 @@ function completeOAuth2() {
                     accessToken: data.access_token,
                     refreshToken: data.refresh_token,
                     idToken: data.id_token
-                } )
-            )
+                } ) )
             .then( data => {
                 // TODO [Future] Pass a custom handler to the `completeOAuth2` function, and execute it here
-                // TODO Verify `id_token`, initiate session store, set cookie (use `response.cookie`), etc.
+                // TODO Write tests for these functions and different scenarios (happy path, failure, etc.)
                 /*
-                    + This is going to need some helper functions like `utils.verifyAuth0IdToken` and its confederates in
-                        the "express prototype app" project.
                     + Look at how Passport handles the different failure modes of the `done` callback of the "verify"
                         method (e.g. `utils.verifyAuth0IdToken`)
                     + I will probably want some sort of "login failure" page to display flash messages
                     + I need to setup a fake OAuth2 server, so I can test this function against a back end
-                    + I also need to setup an Express server for testing these functions in context
-                    + I probably want to put my `spawn` script into a separate module and use it for launching these;
-                        there's also a thing for launching dual processes, which will be useful, too.
                  */
-                response.cookie( 'glados', data.idToken );
-                request.session.user = data;
-                return Promise.resolve();
+                return Promise.resolve( data.idToken );
             } )
-            .then( () => {
+            .then( idToken => jwt.verifySignature( idToken, publicKey ) )
+            .then( idToken => jwt.validateClaims( idToken, factoryOptions.domain, factoryOptions.clientId ) )
+            .then( idToken => {
+                // TODO Initiate session store
+                response.cookie( 'glados', idToken, {
+                    encode: value => value,
+                    httpOnly: true,
+                    maxAge: ms( '90d' ),
+                    sameSite: true,
+                    secure: true
+                } );
+
                 // Call `next()`; let the route itself handle redirection
                 next();
             } )
             .catch( error => {
-                // TODO Does this need something more?
                 debug( 'Error: %s', error.message );
                 debug( 'URL: %s', factoryOptions.tokenUrl );
                 debug( 'Params: %O', tokenUrlParams );
