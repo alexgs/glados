@@ -6,18 +6,22 @@ import sinonChai from 'sinon-chai';
 import url from 'url';
 import defaultCsrfStore from '../../lib/csrf-token-store';
 
-import GladosFactory, { messagesFactory } from '../../lib/oauth2';
+import oauth2, { messagesFactory as oauth2MessageFactory, _reset as oauth2Reset } from '../../lib/oauth2';
+const utils = {
+    messagesFactory: oauth2MessageFactory,
+    _reset: oauth2Reset
+};
 
 chai.use( sinonChai );
 chai.use( dirtyChai );
 
 describe( 'Glados includes an OAuth2 module that', function() {
-    context.only( 'has a `initialize` method. This method', function() {
+    context.only( 'has a `configure` method. This method', function() {
         let app = null;
         let options = null;
 
         beforeEach( function() {
-            GladosFactory._reset();
+            utils._reset();
             app = {
                 locals: {
                     placeholder: 'ok'
@@ -33,45 +37,45 @@ describe( 'Glados includes an OAuth2 module that', function() {
 
         it( 'throws an error if the `app` argument is missing a `locals` field', function() {
             expect( function() {
-                GladosFactory.initialize( options, {} );
-            } ).to.throw( Error, messagesFactory.appIsNotValid() );
+                oauth2.configure( options, {} );
+            } ).to.throw( Error, utils.messagesFactory.appIsNotValid() );
         } );
 
         context( 'throws an error if the `options` argument is missing a required field:', function() {
             it( 'the `callbackUrl` field must be a string', function() {
                 delete options.callbackUrl;
                 expect( function() {
-                    GladosFactory.initialize( options, app );
-                } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
+                    oauth2.configure( options, app );
+                } ).to.throw( Error, utils.messagesFactory.optionsObjectNotCorrect() );
             } );
 
             it( 'the `clientId` field must be a string', function() {
                 delete options.clientId;
                 expect( function() {
-                    GladosFactory.initialize( options, app );
-                } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
+                    oauth2.configure( options, app );
+                } ).to.throw( Error, utils.messagesFactory.optionsObjectNotCorrect() );
             } );
 
             it( 'the `clientSecret` field must be a string', function() {
                 delete options.clientSecret;
                 expect( function() {
-                    GladosFactory.initialize( options, app );
-                } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
+                    oauth2.configure( options, app );
+                } ).to.throw( Error, utils.messagesFactory.optionsObjectNotCorrect() );
             } );
 
             it( 'the `domain` field must be a string', function() {
                 delete options.domain;
                 expect( function() {
-                    GladosFactory.initialize( options, app );
-                } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
+                    oauth2.configure( options, app );
+                } ).to.throw( Error, utils.messagesFactory.optionsObjectNotCorrect() );
             } );
         } );
 
         it( 'throws an error if called more than once', function() {
             expect( function() {
-                GladosFactory.initialize( options, app );
-                GladosFactory.initialize( options, app );
-            } ).to.throw( Error, messagesFactory.factoryAlreadyInitialized() );
+                oauth2.configure( options, app );
+                oauth2.configure( options, app );
+            } ).to.throw( Error, utils.messagesFactory.moduleAlreadyConfigured() );
 
         } );
 
@@ -82,7 +86,7 @@ describe( 'Glados includes an OAuth2 module that', function() {
                 _reset: () => { /* no op */ }
             };
 
-            GladosFactory.initialize( options, app, csrfStore );
+            oauth2.configure( options, app, csrfStore );
             expect( spy ).to.have.been.calledOnce();
         } );
     } );
@@ -100,17 +104,17 @@ describe( 'Glados includes an OAuth2 module that', function() {
         };
 
         beforeEach( function() {
-            GladosFactory._reset();
-            GladosFactory.initialize( gladosOptions, expressApp );
-            glados = GladosFactory.create();
+            utils._reset();
+            oauth2.configure( gladosOptions, expressApp );
+            glados = oauth2.create();
         } );
 
         it( 'throws an error if the factory is not initialized', function() {
-            GladosFactory._reset();
+            utils._reset();
             const routeMiddleware = glados.startOAuth2();
             expect( function() {
                 routeMiddleware();
-            } ).to.throw( Error, messagesFactory.factoryNotInitialized( 'startOAuth2' ) );
+            } ).to.throw( Error, utils.messagesFactory.moduleNotInitialized( 'startOAuth2' ) );
         } );
 
         it( 'has two parameters: `request` and `response`', function() {
@@ -203,11 +207,11 @@ describe( 'Glados includes an OAuth2 module that', function() {
         let token = null;
 
         beforeEach( function() {
-            GladosFactory._reset();
+            utils._reset();
             defaultCsrfStore._reset();
-            GladosFactory.initialize( gladosOptions, expressApp, defaultCsrfStore );
+            oauth2.configure( gladosOptions, expressApp, defaultCsrfStore );
 
-            glados = GladosFactory.create();
+            glados = oauth2.create();
             request = {
                 hostname: 'moving-pictures.yyz',
                 protocol: 'https',
@@ -220,11 +224,11 @@ describe( 'Glados includes an OAuth2 module that', function() {
         } );
 
         it( 'throws an error if the factory is not initialized', function() {
-            GladosFactory._reset();
+            utils._reset();
             const routeMiddleware = glados.completeOAuth2();
             expect( function() {
                 routeMiddleware();
-            } ).to.throw( Error, messagesFactory.factoryNotInitialized( 'completeOAuth2' ) );
+            } ).to.throw( Error, utils.messagesFactory.moduleNotInitialized( 'completeOAuth2' ) );
         } );
     } );
 } );
