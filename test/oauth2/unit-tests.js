@@ -4,141 +4,86 @@ import _ from 'lodash';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import url from 'url';
-import defaultCsrfStore from '../lib/csrf-token-store';
+import defaultCsrfStore from '../../lib/csrf-token-store';
 
-import GladosFactory, { messagesFactory } from '../index';
+import GladosFactory, { messagesFactory } from '../../lib/oauth2';
 
 chai.use( sinonChai );
 chai.use( dirtyChai );
 
-describe( 'Glados', function() {
-    context( 'is created from a Glados Factory that', function() {
-        context( 'has an `initialize` method. This method', function() {
-            let app = null;
-            let options = null;
+describe( 'Glados includes an OAuth2 module that', function() {
+    context.only( 'has a `initialize` method. This method', function() {
+        let app = null;
+        let options = null;
 
-            beforeEach( function() {
-                GladosFactory._reset();
-                app = {
-                    locals: {
-                        placeholder: 'ok'
-                    }
-                };
-                options = {
-                    callbackUrl: 'http://callback.url/hello',
-                    clientId: 'abcdefghijklmnopqrstuvwxyz',
-                    clientSecret: 'setec astronomy',
-                    domain: 'example.com'
-                };
-            } );
+        beforeEach( function() {
+            GladosFactory._reset();
+            app = {
+                locals: {
+                    placeholder: 'ok'
+                }
+            };
+            options = {
+                callbackUrl: 'http://callback.url/hello',
+                clientId: 'abcdefghijklmnopqrstuvwxyz',
+                clientSecret: 'setec astronomy',
+                domain: 'example.com'
+            };
+        } );
 
-            it( 'throws an error if the `app` argument is missing a `locals` field', function() {
-                expect( function() {
-                    GladosFactory.initialize( options, {} );
-                } ).to.throw( Error, messagesFactory.appIsNotValid() );
-            } );
+        it( 'throws an error if the `app` argument is missing a `locals` field', function() {
+            expect( function() {
+                GladosFactory.initialize( options, {} );
+            } ).to.throw( Error, messagesFactory.appIsNotValid() );
+        } );
 
-            context( 'throws an error if the `options` argument is missing a required field:', function() {
-                it( 'the `callbackUrl` field must be a string', function() {
-                    delete options.callbackUrl;
-                    expect( function() {
-                        GladosFactory.initialize( options, app );
-                    } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
-                } );
-
-                it( 'the `clientId` field must be a string', function() {
-                    delete options.clientId;
-                    expect( function() {
-                        GladosFactory.initialize( options, app );
-                    } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
-                } );
-
-                it( 'the `clientSecret` field must be a string', function() {
-                    delete options.clientSecret;
-                    expect( function() {
-                        GladosFactory.initialize( options, app );
-                    } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
-                } );
-
-                it( 'the `domain` field must be a string', function() {
-                    delete options.domain;
-                    expect( function() {
-                        GladosFactory.initialize( options, app );
-                    } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
-                } );
-            } );
-
-            it( 'throws an error if called more than once', function() {
+        context( 'throws an error if the `options` argument is missing a required field:', function() {
+            it( 'the `callbackUrl` field must be a string', function() {
+                delete options.callbackUrl;
                 expect( function() {
                     GladosFactory.initialize( options, app );
-                    GladosFactory.initialize( options, app );
-                } ).to.throw( Error, messagesFactory.factoryAlreadyInitialized() );
-
+                } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
             } );
 
-            it( 'initializes a CSRF token store', function() {
-                const spy = sinon.spy();
-                const csrfStore = {
-                    initialize: spy,
-                    _reset: () => { /* no op */ }
-                };
+            it( 'the `clientId` field must be a string', function() {
+                delete options.clientId;
+                expect( function() {
+                    GladosFactory.initialize( options, app );
+                } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
+            } );
 
-                GladosFactory.initialize( options, app, csrfStore );
-                expect( spy ).to.have.been.calledOnce();
+            it( 'the `clientSecret` field must be a string', function() {
+                delete options.clientSecret;
+                expect( function() {
+                    GladosFactory.initialize( options, app );
+                } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
+            } );
+
+            it( 'the `domain` field must be a string', function() {
+                delete options.domain;
+                expect( function() {
+                    GladosFactory.initialize( options, app );
+                } ).to.throw( Error, messagesFactory.optionsObjectNotCorrect() );
             } );
         } );
 
-        context( 'has a `create` method. This method', function() {
-            let app = null;
-            let options = null;
+        it( 'throws an error if called more than once', function() {
+            expect( function() {
+                GladosFactory.initialize( options, app );
+                GladosFactory.initialize( options, app );
+            } ).to.throw( Error, messagesFactory.factoryAlreadyInitialized() );
 
-            before( function() {
-                GladosFactory._reset();
-            } );
+        } );
 
-            beforeEach( function() {
-                app = {
-                    locals: {
-                        placeholder: 'ok'
-                    }
-                };
-                options = {
-                    callbackUrl: 'http://callback.url/hello',
-                    clientId: 'abcdefghijklmnopqrstuvwxyz',
-                    clientSecret: 'setec astronomy',
-                    domain: 'example.com'
-                };
-            } );
+        it( 'initializes a CSRF token store', function() {
+            const spy = sinon.spy();
+            const csrfStore = {
+                initialize: spy,
+                _reset: () => { /* no op */ }
+            };
 
-            context( 'returns a `glados` object with the following functions:', function() {
-                let glados = null;
-
-                beforeEach( function() {
-                    GladosFactory._reset();
-                    GladosFactory.initialize( options, app );
-                    glados = GladosFactory.create();
-                } );
-
-                it( 'completeOAuth2', function() {
-                    expect( _.isFunction( glados.completeOAuth2 ) ).to.be.true();
-                } );
-
-                it( 'ensureAuthenticated', function() {
-                    expect( _.isFunction( glados.ensureAuthenticated ) ).to.be.true();
-                } );
-                
-                it( 'getDummyHandler', function() {
-                    expect( _.isFunction( glados.getDummyHandler ) ).to.be.true();
-                } );
-                
-                it( 'logout', function() {
-                    expect( _.isFunction( glados.logout ) ).to.be.true();
-                } );
-                
-                it( 'startOAuth2', function() {
-                    expect( _.isFunction( glados.startOAuth2 ) ).to.be.true();
-                } );
-            } );
+            GladosFactory.initialize( options, app, csrfStore );
+            expect( spy ).to.have.been.calledOnce();
         } );
     } );
 
