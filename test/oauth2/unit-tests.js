@@ -16,7 +16,7 @@ chai.use( sinonChai );
 chai.use( dirtyChai );
 
 describe( 'Glados includes an OAuth2 module that', function() {
-    context.only( 'has a `configure` method. This method', function() {
+    context( 'has a `configure` method. This method', function() {
         let app = null;
         let options = null;
 
@@ -95,7 +95,6 @@ describe( 'Glados includes an OAuth2 module that', function() {
         let expressApp = {
             locals: { }
         };
-        let glados = null;
         const gladosOptions = {
             callbackUrl: 'https://moving-pictures.yyz/login/auth-complete',
             clientId: 'tom-sawyer',
@@ -106,19 +105,18 @@ describe( 'Glados includes an OAuth2 module that', function() {
         beforeEach( function() {
             utils._reset();
             oauth2.configure( gladosOptions, expressApp );
-            glados = oauth2.create();
         } );
 
-        it( 'throws an error if the factory is not initialized', function() {
+        it( 'throws an error if the module is not configured', function() {
             utils._reset();
-            const routeMiddleware = glados.startOAuth2();
+            const routeMiddleware = oauth2.startOAuth2();
             expect( function() {
                 routeMiddleware();
             } ).to.throw( Error, utils.messagesFactory.moduleNotInitialized( 'startOAuth2' ) );
         } );
 
         it( 'has two parameters: `request` and `response`', function() {
-            const routeMiddleware = glados.startOAuth2();
+            const routeMiddleware = oauth2.startOAuth2();
             expect( _.isFunction( routeMiddleware ) ).to.be.true();
             expect( routeMiddleware.length ).to.equal( 2 );
         } );
@@ -130,7 +128,7 @@ describe( 'Glados includes an OAuth2 module that', function() {
                 redirect: stub
             };
 
-            const routeMiddleware = glados.startOAuth2();
+            const routeMiddleware = oauth2.startOAuth2();
             routeMiddleware( request, response );
             expect( stub ).to.have.been.calledOnce();
 
@@ -155,7 +153,7 @@ describe( 'Glados includes an OAuth2 module that', function() {
                     redirect: stub
                 };
 
-                const routeMiddleware = glados.startOAuth2();
+                const routeMiddleware = oauth2.startOAuth2();
                 routeMiddleware( request, response );
                 const redirectUriParts = url.parse( stub.args[0][0], true );
                 queryParams = redirectUriParts.query;
@@ -196,7 +194,6 @@ describe( 'Glados includes an OAuth2 module that', function() {
         let expressApp = {
             locals: { }
         };
-        let glados = null;
         const gladosOptions = {
             callbackUrl: 'https://moving-pictures.yyz/login/auth-complete',
             clientId: 'tom-sawyer',
@@ -211,7 +208,6 @@ describe( 'Glados includes an OAuth2 module that', function() {
             defaultCsrfStore._reset();
             oauth2.configure( gladosOptions, expressApp, defaultCsrfStore );
 
-            glados = oauth2.create();
             request = {
                 hostname: 'moving-pictures.yyz',
                 protocol: 'https',
@@ -223,9 +219,9 @@ describe( 'Glados includes an OAuth2 module that', function() {
             token = defaultCsrfStore.generateToken();
         } );
 
-        it( 'throws an error if the factory is not initialized', function() {
+        it( 'throws an error if the module is not configured', function() {
             utils._reset();
-            const routeMiddleware = glados.completeOAuth2();
+            const routeMiddleware = oauth2.completeOAuth2();
             expect( function() {
                 routeMiddleware();
             } ).to.throw( Error, utils.messagesFactory.moduleNotInitialized( 'completeOAuth2' ) );
