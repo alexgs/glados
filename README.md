@@ -36,7 +36,7 @@ const router = express.Router();
 router.get(
     '/login',
     glados.startOAuth2(),
-    glados.getLoginHandler()
+    glados.getDummyHandler()
 );
 
 router.get(

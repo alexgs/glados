@@ -110,22 +110,12 @@ describe( 'Glados', function() {
                 };
             } );
 
-            it( 'throws an error if `initialize` is not called first', function() {
-                GladosFactory._reset();
-                expect( function() {
-                    const glados = GladosFactory.create();
-                } ).to.throw( Error, messagesFactory.factoryNotInitialized() );
-            } );
-
             context( 'returns a `glados` object with the following functions:', function() {
                 let glados = null;
 
-                before( function() {
+                beforeEach( function() {
                     GladosFactory._reset();
                     GladosFactory.initialize( options, app );
-                } );
-
-                beforeEach( function() {
                     glados = GladosFactory.create();
                 } );
 
@@ -137,8 +127,8 @@ describe( 'Glados', function() {
                     expect( _.isFunction( glados.ensureAuthenticated ) ).to.be.true();
                 } );
                 
-                it( 'getLoginHandler', function() {
-                    expect( _.isFunction( glados.getLoginHandler ) ).to.be.true();
+                it( 'getDummyHandler', function() {
+                    expect( _.isFunction( glados.getDummyHandler ) ).to.be.true();
                 } );
                 
                 it( 'logout', function() {
@@ -152,7 +142,7 @@ describe( 'Glados', function() {
         } );
     } );
 
-    context( 'has a `startOAuth2` function that', function() {
+    context( 'has a `startOAuth2` function that returns a middleware function, which', function() {
         let expressApp = {
             locals: { }
         };
@@ -172,90 +162,88 @@ describe( 'Glados', function() {
 
         it( 'throws an error if the factory is not initialized', function() {
             GladosFactory._reset();
+            const routeMiddleware = glados.startOAuth2();
             expect( function() {
-                glados.startOAuth2();
-            } ).to.throw( Error, messagesFactory.illegalState() );
+                routeMiddleware();
+            } ).to.throw( Error, messagesFactory.factoryNotInitialized( 'startOAuth2' ) );
         } );
 
-        context( 'returns a function that', function() {
-            it( 'has two parameters: `request` and `response`', function() {
-                const func = glados.startOAuth2();
-                expect( _.isFunction( func ) ).to.be.true();
-                expect( func.length ).to.equal( 2 );
-            } );
+        it( 'has two parameters: `request` and `response`', function() {
+            const routeMiddleware = glados.startOAuth2();
+            expect( _.isFunction( routeMiddleware ) ).to.be.true();
+            expect( routeMiddleware.length ).to.equal( 2 );
+        } );
 
-            it( 'calls a `redirect` method on the `response` argument with a URL', function() {
+        it( 'calls a `redirect` method on the `response` argument with a URL', function() {
+            const stub = sinon.stub();
+            const request = {};
+            const response = {
+                redirect: stub
+            };
+
+            const routeMiddleware = glados.startOAuth2();
+            routeMiddleware( request, response );
+            expect( stub ).to.have.been.calledOnce();
+
+            const redirectUri = stub.args[0][0];
+            const redirectUriParts = url.parse( redirectUri, true );
+
+            // If host and protocol are set, assume it is a valid URL
+            expect( _.isString( redirectUriParts.host ) ).to.be.true();
+            expect( redirectUriParts.host ).to.equal( gladosOptions.domain );
+            expect( _.trimEnd( redirectUriParts.protocol, ':' ) ).to.equal( 'https' );
+        } );
+
+        context( 'calls `redirect` with a URL having the following query parameters:', function() {
+            let queryParams = null;
+
+            beforeEach( function() {
+                queryParams = null;
+
                 const stub = sinon.stub();
                 const request = {};
                 const response = {
                     redirect: stub
                 };
 
-                const func = glados.startOAuth2();
-                func( request, response );
-                expect( stub ).to.have.been.calledOnce();
-
-                const redirectUri = stub.args[0][0];
-                const redirectUriParts = url.parse( redirectUri, true );
-
-                // If host and protocol are set, assume it is a valid URL
-                expect( _.isString( redirectUriParts.host ) ).to.be.true();
-                expect( redirectUriParts.host ).to.equal( gladosOptions.domain );
-                expect( _.trimEnd( redirectUriParts.protocol, ':' ) ).to.equal( 'https' );
+                const routeMiddleware = glados.startOAuth2();
+                routeMiddleware( request, response );
+                const redirectUriParts = url.parse( stub.args[0][0], true );
+                queryParams = redirectUriParts.query;
             } );
 
-            context( 'calls `redirect` with a URL having the following query parameters:', function() {
-                let queryParams = null;
+            it( '[optional] audience', function() {
+                if ( queryParams.audience ) {
+                    expect( queryParams.audience ).to.equal( `https://${gladosOptions.domain}/userinfo` );
+                } else {
+                    expect( queryParams.audience ).to.equal( undefined );
+                }
+            } );
 
-                beforeEach( function() {
-                    queryParams = null;
+            it( 'client_id', function() {
+                expect( queryParams.client_id ).to.equal( gladosOptions.clientId );
+            } );
 
-                    const stub = sinon.stub();
-                    const request = {};
-                    const response = {
-                        redirect: stub
-                    };
+            it( 'redirect_uri', function() {
+                expect( queryParams.redirect_uri ).to.equal( gladosOptions.callbackUrl );
+            } );
 
-                    const func = glados.startOAuth2();
-                    func( request, response );
-                    const redirectUriParts = url.parse( stub.args[0][0], true );
-                    queryParams = redirectUriParts.query;
-                } );
+            it( 'response_type', function() {
+                expect( queryParams.response_type ).to.equal( 'code' );
+            } );
 
-                it( '[optional] audience', function() {
-                    if ( queryParams.audience ) {
-                        expect( queryParams.audience ).to.equal( `https://${gladosOptions.domain}/userinfo` );
-                    } else {
-                        expect( queryParams.audience ).to.equal( undefined );
-                    }
-                } );
+            it( 'scope', function() {
+                expect( queryParams.scope ).to.equal( 'openid email' );
+            } );
 
-                it( 'client_id', function() {
-                    expect( queryParams.client_id ).to.equal( gladosOptions.clientId );
-                } );
-
-                it( 'redirect_uri', function() {
-                    expect( queryParams.redirect_uri ).to.equal( gladosOptions.callbackUrl );
-                } );
-
-                it( 'response_type', function() {
-                    expect( queryParams.response_type ).to.equal( 'code' );
-                } );
-
-                it( 'scope', function() {
-                    expect( queryParams.scope ).to.equal( 'openid email' );
-                } );
-
-                it( 'state', function() {
-                    expect( _.isString( queryParams.state ) ).to.be.true();
-                    expect( queryParams.state ).to.have.lengthOf.at.least( 12 );   // CSRF token must be at 12 chars long
-                } );
+            it( 'state', function() {
+                expect( _.isString( queryParams.state ) ).to.be.true();
+                expect( queryParams.state ).to.have.lengthOf.at.least( 12 );   // CSRF token must be at 12 chars long
             } );
         } );
-
     } );
 
-    context( 'has a `completeOAuth2` function that', function() {
+    context( 'has a `completeOAuth2` function that returns a middleware function, which', function() {
         let expressApp = {
             locals: { }
         };
@@ -272,7 +260,9 @@ describe( 'Glados', function() {
         beforeEach( function() {
             GladosFactory._reset();
             defaultCsrfStore._reset();
-            token = defaultCsrfStore.generateToken();
+            GladosFactory.initialize( gladosOptions, expressApp, defaultCsrfStore );
+
+            glados = GladosFactory.create();
             request = {
                 hostname: 'moving-pictures.yyz',
                 protocol: 'https',
@@ -281,9 +271,15 @@ describe( 'Glados', function() {
                     state: token
                 }
             };
+            token = defaultCsrfStore.generateToken();
+        } );
 
-            GladosFactory.initialize( gladosOptions, expressApp, defaultCsrfStore );
-            glados = GladosFactory.create();
+        it( 'throws an error if the factory is not initialized', function() {
+            GladosFactory._reset();
+            const routeMiddleware = glados.completeOAuth2();
+            expect( function() {
+                routeMiddleware();
+            } ).to.throw( Error, messagesFactory.factoryNotInitialized( 'completeOAuth2' ) );
         } );
     } );
 } );
