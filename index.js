@@ -1,10 +1,10 @@
-import debugLib from 'debug';
+import debugAgent from 'debug';
 import _ from 'lodash';
 import superagent from 'superagent';
 import url from 'url';
 import defaultCsrfStore from './lib/csrf-token-store';
 
-const debug = debugLib( 'glados' );
+const debug = debugAgent( 'glados:auth' );
 
 let csrf = null;
 let factoryOptions = null;
@@ -141,7 +141,8 @@ function completeOAuth2() {
 
         if ( !csrf.verifyToken( request.query.state ) ) {
             // TODO Allow this to be customized
-            response.redirect( '/' );
+            // TODO This seems to throw an error, "Error: Can't set headers after they are sent."
+            response.redirect( '/' ).end();
         }
 
         const tokenUrlParams = {
@@ -193,12 +194,20 @@ function completeOAuth2() {
                     + I probably want to put my `spawn` script into a separate module and use it for launching these;
                         there's also a thing for launching dual processes, which will be useful, too.
                  */
+                response.cookie( 'glados', data.idToken );
+                request.session.user = data;
+                return Promise.resolve();
             } )
             .then( () => {
-                // TODO Call `next()`; let the route itself handle redirection
+                // Call `next()`; let the route itself handle redirection
+                next();
             } )
             .catch( error => {
-                // TODO
+                // TODO Does this need something more?
+                debug( 'Error: %s', error.message );
+                debug( 'URL: %s', factoryOptions.tokenUrl );
+                debug( 'Params: %O', tokenUrlParams );
+                next();
             } );
     };
 }
