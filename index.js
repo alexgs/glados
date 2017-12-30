@@ -1,7 +1,7 @@
 import oauth2 from './lib/oauth2';
 
 function getCookieMiddleware() {
-
+    // TODO Copy the guts of the `cookie-parser` library here
 }
 
 function getSessionMiddleware() {
