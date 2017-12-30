@@ -52,11 +52,13 @@ function create() {
 }
 
 function initialize( options, app, csrfStore = defaultCsrfStore ) {
+    // TODO Update to work with capitalization pattern used by Passport
     debug( 'Initializing' );
     if ( !_.conformsTo( options, optionsFields ) ) {
         throw new Error( messagesFactory.optionsObjectNotCorrect() );
     }
     if ( !_.isObject( app ) || !_.has( app, 'locals' ) ) {
+        debug( JSON.stringify( app, null, 4 ) );
         throw new Error( messagesFactory.appIsNotValid() );
     }
     if ( !_.isNull( factoryOptions ) ) {

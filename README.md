@@ -10,6 +10,8 @@ In the main Express application script, typically `app.js` or `index.js`:
 import express from 'express';
 import session from 'express-session';
 
+const app = express();
+
 import GladosFactory from 'glados';
 const gladosOptions = {
     domain: 'example.com',
@@ -17,9 +19,7 @@ const gladosOptions = {
     clientSecret: 'setec astronomy',
     callbackUrl: 'http://callback.url/hello'
 };
-GladosFactory.initialize( gladosOptions );
-
-const app = express();
+GladosFactory.initialize( gladosOptions, app );
 
 app.use( session( sessionOptions ) );
 ```
