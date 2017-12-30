@@ -1,4 +1,4 @@
-import OAuthFactory from './lib/oauth2';
+import oauth2 from './lib/oauth2';
 
 function getCookieMiddleware() {
 
@@ -8,11 +8,9 @@ function getSessionMiddleware() {
 
 }
 
-const oauth2 = OAuthFactory.create();
-
 const glados = {
     completeOAuth2: oauth2.completeOAuth2,
-    configureOAuth2: OAuthFactory.initialize,
+    configureOAuth2: oauth2.configure,
     ensureAuthenticated: oauth2.ensureAuthenticated,
     getCookieMiddleware,
     getDummyHandler: oauth2.getDummyHandler,
