@@ -7,7 +7,7 @@ function getCookieMiddleware() {
 
 function getSessionMiddleware() {
     return function( request, response, next ) {
-    //     session.initializeSessionCookie( request, response )
+    //     session.setAnonymousSession( request, response )
     //         .then( sessionId => next() );
         next();
     }
