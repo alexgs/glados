@@ -16,11 +16,17 @@ chai.use( dirtyChai );
 // TODO >>> Add tests for `setAnonymousSession` <<<
 
 describe( 'Glados includes a Session module that', function() {
-    it( 'passes a canary test', function( done ) {
-        // TODO ? None of these seem to work :-(
-        // return expect( Promise.resolve( { foo: 'bar' } ) ).to.eventually.have.property( 'foo' );
-        // return expect( Promise.resolve( 2 + 2 ) ).to.eventually.equal( 4 );
-        // expect( Promise.resolve( 2 + 2 ) ).to.eventually.equal( 4 ).and.notify( done );
-        expect( Promise.resolve( 4 ) ).to.eventually.equal( 4 ).and.notify( done );
+    context( 'has a `setAnonymousSession` function, which', function() {
+        context( 'returns a Promise that', function() {
+            it( '(if the cookie is sent from the client) resolves with the session ID and JWT token' );
+
+            context( '(if the cookie is not sent by the client)', function() {
+                it( 'sends a cookie to the client' );
+
+                it('resolves with the session ID and JWT token' );
+            } );
+        } );
+
+        it( 'accepts an undefined JWT token' );
     } );
 } );
