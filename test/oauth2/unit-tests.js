@@ -121,42 +121,49 @@ describe( 'Glados includes an OAuth2 module that', function() {
             expect( routeMiddleware.length ).to.equal( 2 );
         } );
 
-        it( 'calls a `redirect` method on the `response` argument with a URL', function() {
-            const stub = sinon.stub();
+        it( 'sets an anonymous session cookie' );
+
+        it( 'calls a `redirect` method on the `response` argument with a URL', function( done ) {
+            const stub = sinon.stub().callsFake( ( targetUrl ) => {
+                expect( stub ).to.have.been.calledOnce();
+
+                // If host and protocol are set, assume it is a valid URL
+                const redirectUriParts = url.parse( targetUrl, true );
+                expect( _.isString( redirectUriParts.host ) ).to.be.true();
+                expect( redirectUriParts.host ).to.equal( gladosOptions.domain );
+                expect( _.trimEnd( redirectUriParts.protocol, ':' ) ).to.equal( 'https' );
+
+                done();
+            } );
             const request = {};
             const response = {
+                cookie: sinon.stub(),
                 redirect: stub
             };
 
             const routeMiddleware = oauth2.startOAuth2();
             routeMiddleware( request, response );
-            expect( stub ).to.have.been.calledOnce();
-
-            const redirectUri = stub.args[0][0];
-            const redirectUriParts = url.parse( redirectUri, true );
-
-            // If host and protocol are set, assume it is a valid URL
-            expect( _.isString( redirectUriParts.host ) ).to.be.true();
-            expect( redirectUriParts.host ).to.equal( gladosOptions.domain );
-            expect( _.trimEnd( redirectUriParts.protocol, ':' ) ).to.equal( 'https' );
         } );
 
         context( 'calls `redirect` with a URL having the following query parameters:', function() {
             let queryParams = null;
 
-            beforeEach( function() {
+            beforeEach( function( done ) {
                 queryParams = null;
 
-                const stub = sinon.stub();
+                const stub = sinon.stub().callsFake( ( targetUrl ) => {
+                    const redirectUriParts = url.parse( targetUrl, true );
+                    queryParams = redirectUriParts.query;
+                    done();
+                } );
                 const request = {};
                 const response = {
+                    cookie: sinon.stub(),
                     redirect: stub
                 };
 
                 const routeMiddleware = oauth2.startOAuth2();
                 routeMiddleware( request, response );
-                const redirectUriParts = url.parse( stub.args[0][0], true );
-                queryParams = redirectUriParts.query;
             } );
 
             it( '[optional] audience', function() {
