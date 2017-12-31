@@ -13,11 +13,10 @@ chai.use( sinonChai );
 chai.use( chaiAsPromised );
 chai.use( dirtyChai );
 
-// TODO >>> Add tests for `setAnonymousSession` <<<
+// TODO >>> Add tests for `verifyToken` and other functions with failure modes <<<
 
-describe( 'Glados includes a Session module that', function() {
+describe( 'Glados includes a CRSF Token Store module that', function() {
     it( 'passes a canary test', function( done ) {
-        // TODO ? None of these seem to work :-(
         // return expect( Promise.resolve( { foo: 'bar' } ) ).to.eventually.have.property( 'foo' );
         // return expect( Promise.resolve( 2 + 2 ) ).to.eventually.equal( 4 );
         // expect( Promise.resolve( 2 + 2 ) ).to.eventually.equal( 4 ).and.notify( done );
