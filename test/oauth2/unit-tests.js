@@ -122,7 +122,7 @@ describe( 'Glados includes an OAuth2 module that', function() {
             expect( routeMiddleware.length ).to.equal( 2 );
         } );
 
-        it( 'uses the `session` module to set an anonymous session cookie', function( done ) {
+        it( 'uses the Session module to set an anonymous session cookie', function( done ) {
             const stub = sinon.stub( session, 'setAnonymousSession' )
                 .callsFake( () => Promise.resolve( {
                     sessionId: 'fake-session-id',
@@ -234,6 +234,7 @@ describe( 'Glados includes an OAuth2 module that', function() {
             defaultCsrfStore._reset();
             oauth2.configure( gladosOptions, expressApp, defaultCsrfStore );
 
+            token = defaultCsrfStore.generateToken();
             request = {
                 hostname: 'moving-pictures.yyz',
                 protocol: 'https',
@@ -242,7 +243,6 @@ describe( 'Glados includes an OAuth2 module that', function() {
                     state: token
                 }
             };
-            token = defaultCsrfStore.generateToken();
         } );
 
         context( 'throws an error if', function() {
@@ -263,6 +263,16 @@ describe( 'Glados includes an OAuth2 module that', function() {
         it( 'validates the JWT claims' );
         it( 'gets an anonymous session ID' );
         it( 'saves the JWT claims in the Session Store' );
-        it( 'calls the `next` argument' );
+
+        it( 'calls the `next` argument', function( done ) {
+            const routeMiddleware = oauth2.completeOAuth2();
+            const nextStub = sinon.stub().callsFake( () => {
+                expect( 2 + 2 ).to.equal( 4 );
+                expect( nextStub ).to.have.been.calledOnce();
+                done();
+            } );
+
+            routeMiddleware( request, {}, nextStub );
+        } );
     } );
 } );
