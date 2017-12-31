@@ -13,6 +13,8 @@ function getSessionMiddleware() {
     }
 }
 
+// TODO Create a `configure` function here that allows for DI but uses reasonable defaults, then configures the separate submodules
+
 const glados = {
     completeOAuth2: oauth2.completeOAuth2,
     configureOAuth2: oauth2.configure,
