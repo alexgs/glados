@@ -5,6 +5,7 @@ import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import url from 'url';
 import defaultCsrfStore from '../../lib/csrf-token-store';
+import session from '../../lib/session';
 
 import oauth2, { messagesFactory as oauth2MessageFactory, _reset as oauth2Reset } from '../../lib/oauth2';
 const utils = {
@@ -121,7 +122,25 @@ describe( 'Glados includes an OAuth2 module that', function() {
             expect( routeMiddleware.length ).to.equal( 2 );
         } );
 
-        it( 'sets an anonymous session cookie' );
+        it( 'uses the `session` module to set an anonymous session cookie', function( done ) {
+            const stub = sinon.stub( session, 'setAnonymousSession' )
+                .callsFake( () => Promise.resolve( {
+                    sessionId: 'fake-session-id',
+                    idToken: 'fake-id-token'
+                } ) );
+            const request = {};
+            const response = {
+                cookie: sinon.stub(),
+                redirect: sinon.stub().callsFake( ( targetUrl ) => {
+                    expect( stub ).to.have.been.calledOnce();
+                    stub.restore();
+                    done();
+                } )
+            };
+
+            const routeMiddleware = oauth2.startOAuth2();
+            routeMiddleware( request, response );
+        } );
 
         it( 'calls a `redirect` method on the `response` argument with a URL', function( done ) {
             const stub = sinon.stub().callsFake( ( targetUrl ) => {
