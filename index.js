@@ -1,119 +1,31 @@
-import crypto from 'crypto';
-import _ from 'lodash';
-import url from 'url';
+import oauth2 from './lib/oauth2';
+import session from './lib/session';
 
-let factoryOptions = null;
-
-const allFactoryOptionsFields = {
-    apiUrl: _.isString,
-    authorizationUrl: _.isString,
-    callbackUrl: _.isString,
-    clientId: _.isString,
-    clientSecret: _.isString,
-    domain: _.isString,
-    tokenUrl: _.isString,
-    userInfoUrl: _.isString
-};
-
-const optionsTemplate = {
-    callbackUrl: _.isString,
-    clientId: _.isString,
-    clientSecret: _.isString,
-    domain: _.isString
-};
-
-
-// --- GLADOS FACTORY METHODS ---
-
-function create() {
-    if ( _.isNull( factoryOptions ) ) {
-        throw new Error( messagesFactory.factoryNotInitialized() );
-    }
-
-    return {
-        completeOAuth2,
-        ensureAuthenticated,
-        getLoginHandler,
-        logout,
-        startOAuth2
-    };
+function getCookieMiddleware() {
+    // TODO Copy the guts of the `cookie-parser` library here
 }
 
-function initialize( options ) {
-    if ( !_.conformsTo( options, optionsTemplate ) ) {
-        throw new Error( messagesFactory.optionsObjectNotCorrect() );
+function getSessionMiddleware() {
+    return function( request, response, next ) {
+        // TODO Does the session object persist between requests, or is it reloaded every time?
+        request.session = request.session || session.generateSessionObject();
+        next();
     }
-    if ( !_.isNull( factoryOptions ) ) {
-        throw new Error( messagesFactory.factoryAlreadyInitialized() );
-    }
-
-    const derivedOptions = {
-        authorizationUrl: 'https://' + options.domain + '/authorize',
-        tokenUrl: 'https://' + options.domain + '/oauth/token',
-        userInfoUrl: 'https://' + options.domain + '/userinfo',
-        apiUrl: 'https://' + options.domain + '/api'
-    };
-    factoryOptions = _.merge( {}, options, derivedOptions );
 }
 
-export const messagesFactory = {
-    factoryAlreadyInitialized: () => `The Glados Factory has already been initialized.`,
-    factoryNotInitialized: () => `The Glados Factory must be initialized before \`create\` is called.`,
-    illegalState: () => `Glados or her factory is in an illegal state`,
-    optionsObjectNotCorrect: () => `The \`options\` object does not have the correct fields and types.`
+// TODO Create a `configure` function here that allows for DI but uses reasonable defaults, then configures the separate submodules
+
+const glados = {
+    completeOAuth2: oauth2.completeOAuth2,
+    configureOAuth2: oauth2.configure,
+    configureSessionStore: session.configureStore,
+    generateSessionObject: session.generateSessionObject,
+    getCookieMiddleware,
+    getDummyHandler: oauth2.getDummyHandler,
+    getRequireAuthMiddleware: session.getRequireAuthMiddleware,
+    getSessionMiddleware,
+    logout: oauth2.logout,
+    startOAuth2: oauth2.startOAuth2
 };
 
-/**
- * @private
- *
- * Reset the factory options so that `initialize` can be called again. **WARNING:** For use only in **development**
- * and **testing;** use in a production environment may lead to unexpected and unpredictable results.
- */
-function _reset() {
-    factoryOptions = null;
-}
-
-const GladosFactory = {
-    create,
-    initialize,
-    _reset
-};
-
-export default GladosFactory;
-
-
-// --- GLADOS OBJECT FUNCTIONS ---
-
-function completeOAuth2() {}
-
-function ensureAuthenticated() {}
-
-function getLoginHandler() {}
-
-function logout() {}
-
-function startOAuth2() {
-    if ( _.isNull( factoryOptions ) || !_.conformsTo( factoryOptions, allFactoryOptionsFields ) ) {
-        throw new Error( messagesFactory.illegalState() );
-    }
-
-    const csrfToken = crypto.randomBytes( 32 ).toString( 'base64' );
-
-    const oauthParams = {
-        audience: `https://${factoryOptions.domain}/userinfo`,
-        client_id: factoryOptions.clientId,
-        redirect_uri: factoryOptions.callbackUrl,
-        response_type: 'code',
-        scope: 'openid email',
-        state: csrfToken
-    };
-
-    let authorizationUrlParts = url.parse( factoryOptions.authorizationUrl, true );
-    authorizationUrlParts.query = _.merge( {}, authorizationUrlParts.query, oauthParams );
-    let authorizationUrl = url.format( authorizationUrlParts );
-
-    // Return an Express middleware function
-    return function( request, response ) {
-        response.redirect( authorizationUrl );
-    };
-}
+export default glados;
