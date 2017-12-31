@@ -3,8 +3,10 @@ import dirtyChai from 'dirty-chai';
 import _ from 'lodash';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import superagent from 'superagent';
 import url from 'url';
 import csrfStore from '../../lib/csrf-token-store';
+import jwt from '../../lib/json-web-tokens';
 import session from '../../lib/session';
 
 import oauth2, { messagesFactory as oauth2MessageFactory, _reset as oauth2Reset } from '../../lib/oauth2';
@@ -213,6 +215,7 @@ describe( 'Glados includes an OAuth2 module that', function() {
     } );
 
     context.only( 'has a `completeOAuth2` function that returns a middleware function, which', function() {
+        let anonIdStub = null;
         let expressApp = {
             locals: { }
         };
@@ -222,14 +225,41 @@ describe( 'Glados includes an OAuth2 module that', function() {
             clientSecret: 'a-brilliant-red-barchetta-from-a-better-vanished-time',
             domain: 'rush.auth0.com'
         };
+        let fakeResponse = null;        // fake response from Superagent
+        let postResult = null;          // object returned from Superagent.post
+        let postStub = null;            // stub method on Superagent.post
         let request = null;
+        const resetAll = function( done ) {
+            anonIdStub.restore();
+            postStub.restore();
+            validateStub.restore();
+            verifyStub.restore();
+            done();
+        };
+        let response = null;
         let token = null;
+        let validateStub = null;        // stub jwt.validateClaims
+        let verifyStub = null;          // stub jwt.verifyToken
 
         beforeEach( function() {
             utils._reset();
             csrfStore._reset();
             oauth2.configure( gladosOptions, expressApp );
 
+            anonIdStub = sinon.stub( session, 'setAnonymousSession' )
+                .callsFake( ({ sessionId, idToken }) => Promise.resolve( { sessionId, idToken } ) );
+            fakeResponse = {
+                ok: true,
+                body: {
+                    accessToken: 'random-access-token',
+                    refreshToken: 'random-refresh-token',
+                    idToken: 'random-id-token'
+                }
+            };
+            postResult = {
+                send: () => Promise.resolve( fakeResponse )
+            };
+            postStub = sinon.stub( superagent, 'post' ).callsFake( () => postResult );
             token = csrfStore.generateToken();
             request = {
                 hostname: 'moving-pictures.yyz',
@@ -239,6 +269,11 @@ describe( 'Glados includes an OAuth2 module that', function() {
                     state: token
                 }
             };
+            response = {
+                cookie: function( name, data, options ) { /* do nothing */ }
+            };
+            validateStub = sinon.stub( jwt, 'validateClaims' ).returns( true );
+            verifyStub = sinon.stub( jwt, 'verifySignature' ).returns( true );
         } );
 
         context( 'throws an error if', function() {
@@ -248,6 +283,7 @@ describe( 'Glados includes an OAuth2 module that', function() {
                 expect( function() {
                     routeMiddleware();
                 } ).to.throw( Error, utils.messagesFactory.moduleNotInitialized( 'completeOAuth2' ) );
+                resetAll( () => { /* do nothing */ } );
             } );
 
             it( 'the request object does not have the required fields' );
@@ -261,7 +297,8 @@ describe( 'Glados includes an OAuth2 module that', function() {
                 redirect: sinon.stub().callsFake( targetUrl => {
                     expect( targetUrl ).to.equal( '/' );
                     verifyStub.restore();
-                    done();
+                    resetAll( done );
+                    // done();
                 } )
             };
 
@@ -270,21 +307,82 @@ describe( 'Glados includes an OAuth2 module that', function() {
             } );
         } );
 
-        it( 'sends token parameters to the token URL' );
-        it( 'verifies the JWT signature' );
-        it( 'validates the JWT claims' );
-        it( 'gets an anonymous session ID' );
-        it( 'saves the JWT claims in the Session Store' );
+        it( 'sends token parameters to the token URL', function( done ) {
+            const tokenUrl = 'https://' + gladosOptions.domain + '/oauth/token';
+            const tokenUrlParams = {
+                grant_type: 'authorization_code',
+                client_id: gladosOptions.clientId,
+                client_secret: gladosOptions.clientSecret,
+                code: request.query.code,
+                redirect_uri: gladosOptions.callbackUrl
+            };
+
+            postResult = {
+                send: ( postParams ) => {
+                    expect( postParams ).to.deep.equal( tokenUrlParams );
+                    return Promise.resolve( fakeResponse );     // `send` returns a Promise that resolves to a response
+                }
+            };
+
+            // Restore the original `post` function before replacing it with this custom one
+            postStub.restore();
+            postStub = sinon.stub( superagent, 'post' )
+                .callsFake( ( targetUrl ) => {
+                    expect( targetUrl ).to.equal( tokenUrl );
+                    return  postResult;     // `post` returns an object with a `send` method
+                } );
+
+            const routeMiddleware = oauth2.completeOAuth2();
+            routeMiddleware( request, {}, () => {
+                expect( postStub ).to.have.been.calledOnce();
+                resetAll( done );
+            } );
+        } );
+
+        it( 'verifies the JWT signature', function( done ) {
+            const routeMiddleware = oauth2.completeOAuth2();
+            routeMiddleware( request, response, () => {
+                expect( verifyStub ).to.have.been.calledOnce();
+                resetAll( done );
+            } );
+        } );
+
+        it( 'validates the JWT claims', function( done ) {
+            const routeMiddleware = oauth2.completeOAuth2();
+            routeMiddleware( request, response, () => {
+                expect( validateStub ).to.have.been.calledOnce();
+                resetAll( done );
+            } );
+        } );
+
+        it( 'gets an anonymous session ID', function( done ) {
+            const routeMiddleware = oauth2.completeOAuth2();
+            routeMiddleware( request, {}, () => {
+                expect( anonIdStub ).to.have.been.calledOnce();
+                resetAll( done );
+            } );
+        } );
+
+        it.skip( 'saves the JWT claims in the Session Store', function( done ) {
+            const routeMiddleware = oauth2.completeOAuth2();
+            routeMiddleware( request, {}, () => {
+                expect( validateStub ).to.have.been.calledOnce();
+                resetAll( done );
+            } );
+        } );
 
         it( 'calls the `next` argument', function( done ) {
             const routeMiddleware = oauth2.completeOAuth2();
             const nextStub = sinon.stub().callsFake( () => {
                 expect( 2 + 2 ).to.equal( 4 );
                 expect( nextStub ).to.have.been.calledOnce();
-                done();
+                resetAll( done );
             } );
 
             routeMiddleware( request, {}, nextStub );
         } );
+
+        it( '(if the JWT fails validation) redirects to the site root' );
+        it( '(if the JWT fails verification) redirects to the site root' );
     } );
 } );

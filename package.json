@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha **/unit-tests.js",
+    "test:debug": "DEBUG=glados:* mocha **/unit-tests.js",
     "test:integration": "mocha **/integration-tests.js"
   },
   "repository": {
