@@ -7,9 +7,8 @@ function getCookieMiddleware() {
 
 function getSessionMiddleware() {
     return function( request, response, next ) {
-        request.session = request.session || {};
-    //     session.setAnonymousSession( request, response )
-    //         .then( sessionId => next() );
+        // TODO Does the session object persist between requests, or is it reloaded every time?
+        request.session = request.session || session.generateSessionObject();
         next();
     }
 }
@@ -17,6 +16,8 @@ function getSessionMiddleware() {
 const glados = {
     completeOAuth2: oauth2.completeOAuth2,
     configureOAuth2: oauth2.configure,
+    configureSessionStore: session.configureStore,
+    generateSessionObject: session.generateSessionObject,
     getCookieMiddleware,
     getDummyHandler: oauth2.getDummyHandler,
     getRequireAuthMiddleware: session.getRequireAuthMiddleware,
