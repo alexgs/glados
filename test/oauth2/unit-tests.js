@@ -215,7 +215,7 @@ describe( 'Glados includes an OAuth2 module that', function() {
     } );
 
     context.only( 'has a `completeOAuth2` function that returns a middleware function, which', function() {
-        let anonIdStub = null;
+        let anonIdStub = null;          // stub session.setAnonymousSession
         let expressApp = {
             locals: { }
         };
@@ -228,15 +228,17 @@ describe( 'Glados includes an OAuth2 module that', function() {
         let fakeResponse = null;        // fake response from Superagent
         let postResult = null;          // object returned from Superagent.post
         let postStub = null;            // stub method on Superagent.post
-        let request = null;
+        let request = null;             // fake Express request object
         const resetAll = function( done ) {
             anonIdStub.restore();
             postStub.restore();
+            saveStub.restore();
             validateStub.restore();
             verifyStub.restore();
             done();
         };
-        let response = null;
+        let response = null;            // fake Express response object
+        let saveStub = null;            // stub session.storeIdToken
         let token = null;
         let validateStub = null;        // stub jwt.validateClaims
         let verifyStub = null;          // stub jwt.verifyToken
@@ -272,6 +274,8 @@ describe( 'Glados includes an OAuth2 module that', function() {
             response = {
                 cookie: function( name, data, options ) { /* do nothing */ }
             };
+            saveStub = sinon.stub( session, 'storeIdToken' )
+                .callsFake( ( sessionId, idToken ) => Promise.resolve( { sessionId, idToken } ) );
             validateStub = sinon.stub( jwt, 'validateClaims' ).returns( true );
             verifyStub = sinon.stub( jwt, 'verifySignature' ).returns( true );
         } );
@@ -298,7 +302,6 @@ describe( 'Glados includes an OAuth2 module that', function() {
                     expect( targetUrl ).to.equal( '/' );
                     verifyStub.restore();
                     resetAll( done );
-                    // done();
                 } )
             };
 
@@ -333,7 +336,7 @@ describe( 'Glados includes an OAuth2 module that', function() {
                 } );
 
             const routeMiddleware = oauth2.completeOAuth2();
-            routeMiddleware( request, {}, () => {
+            routeMiddleware( request, response, () => {
                 expect( postStub ).to.have.been.calledOnce();
                 resetAll( done );
             } );
@@ -357,16 +360,16 @@ describe( 'Glados includes an OAuth2 module that', function() {
 
         it( 'gets an anonymous session ID', function( done ) {
             const routeMiddleware = oauth2.completeOAuth2();
-            routeMiddleware( request, {}, () => {
+            routeMiddleware( request, response, () => {
                 expect( anonIdStub ).to.have.been.calledOnce();
                 resetAll( done );
             } );
         } );
 
-        it.skip( 'saves the JWT claims in the Session Store', function( done ) {
+        it( 'saves the JWT claims in the Session Store', function( done ) {
             const routeMiddleware = oauth2.completeOAuth2();
-            routeMiddleware( request, {}, () => {
-                expect( validateStub ).to.have.been.calledOnce();
+            routeMiddleware( request, response, () => {
+                expect( saveStub ).to.have.been.calledOnce();
                 resetAll( done );
             } );
         } );
@@ -379,7 +382,7 @@ describe( 'Glados includes an OAuth2 module that', function() {
                 resetAll( done );
             } );
 
-            routeMiddleware( request, {}, nextStub );
+            routeMiddleware( request, response, nextStub );
         } );
 
         it( '(if the JWT fails validation) redirects to the site root' );
