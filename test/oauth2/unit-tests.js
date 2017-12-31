@@ -4,7 +4,7 @@ import _ from 'lodash';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import url from 'url';
-import defaultCsrfStore from '../../lib/csrf-token-store';
+import csrfStore from '../../lib/csrf-token-store';
 import session from '../../lib/session';
 
 import oauth2, { messagesFactory as oauth2MessageFactory, _reset as oauth2Reset } from '../../lib/oauth2';
@@ -81,14 +81,10 @@ describe( 'Glados includes an OAuth2 module that', function() {
         } );
 
         it( 'initializes a CSRF token store', function() {
-            const spy = sinon.spy();
-            const csrfStore = {
-                initialize: spy,
-                _reset: () => { /* no op */ }
-            };
-
-            oauth2.configure( options, app, csrfStore );
+            const spy = sinon.spy( csrfStore, 'initialize' );
+            oauth2.configure( options, app );
             expect( spy ).to.have.been.calledOnce();
+            spy.restore();
         } );
     } );
 
@@ -231,10 +227,10 @@ describe( 'Glados includes an OAuth2 module that', function() {
 
         beforeEach( function() {
             utils._reset();
-            defaultCsrfStore._reset();
-            oauth2.configure( gladosOptions, expressApp, defaultCsrfStore );
+            csrfStore._reset();
+            oauth2.configure( gladosOptions, expressApp );
 
-            token = defaultCsrfStore.generateToken();
+            token = csrfStore.generateToken();
             request = {
                 hostname: 'moving-pictures.yyz',
                 protocol: 'https',
@@ -257,7 +253,23 @@ describe( 'Glados includes an OAuth2 module that', function() {
             it( 'the request object does not have the required fields' );
         } );
 
-        it( 'redirects to the website root if the CSRF check fails' );
+        it( 'redirects to the website root if the CSRF check fails', function( done ) {
+            const verifyStub = sinon.stub( csrfStore, 'verifyToken' ).returns( false );
+
+            const routeMiddleware = oauth2.completeOAuth2();
+            const response = {
+                redirect: sinon.stub().callsFake( targetUrl => {
+                    expect( targetUrl ).to.equal( '/' );
+                    verifyStub.restore();
+                    done();
+                } )
+            };
+
+            routeMiddleware( request, response, () => {
+                throw new Error( 'Done function invoked.' );
+            } );
+        } );
+
         it( 'sends token parameters to the token URL' );
         it( 'verifies the JWT signature' );
         it( 'validates the JWT claims' );
