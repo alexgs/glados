@@ -216,7 +216,7 @@ describe( 'Glados includes an OAuth2 module that', function() {
         } );
     } );
 
-    context( 'has a `completeOAuth2` function that returns a middleware function, which', function() {
+    context.only( 'has a `completeOAuth2` function that returns a middleware function, which', function() {
         let expressApp = {
             locals: { }
         };
@@ -245,12 +245,24 @@ describe( 'Glados includes an OAuth2 module that', function() {
             token = defaultCsrfStore.generateToken();
         } );
 
-        it( 'throws an error if the module is not configured', function() {
-            utils._reset();
-            const routeMiddleware = oauth2.completeOAuth2();
-            expect( function() {
-                routeMiddleware();
-            } ).to.throw( Error, utils.messagesFactory.moduleNotInitialized( 'completeOAuth2' ) );
+        context( 'throws an error if', function() {
+            it( 'the OAuth2 module is not configured', function() {
+                utils._reset();
+                const routeMiddleware = oauth2.completeOAuth2();
+                expect( function() {
+                    routeMiddleware();
+                } ).to.throw( Error, utils.messagesFactory.moduleNotInitialized( 'completeOAuth2' ) );
+            } );
+
+            it( 'the request object does not have the required fields' );
         } );
+
+        it( 'redirects to the website root if the CSRF check fails' );
+        it( 'sends token parameters to the token URL' );
+        it( 'verifies the JWT signature' );
+        it( 'validates the JWT claims' );
+        it( 'gets an anonymous session ID' );
+        it( 'saves the JWT claims in the Session Store' );
+        it( 'calls the `next` argument' );
     } );
 } );
