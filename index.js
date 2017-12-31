@@ -7,6 +7,7 @@ function getCookieMiddleware() {
 
 function getSessionMiddleware() {
     return function( request, response, next ) {
+        request.session = request.session || {};
     //     session.setAnonymousSession( request, response )
     //         .then( sessionId => next() );
         next();
@@ -16,9 +17,9 @@ function getSessionMiddleware() {
 const glados = {
     completeOAuth2: oauth2.completeOAuth2,
     configureOAuth2: oauth2.configure,
-    ensureAuthenticated: oauth2.ensureAuthenticated,
     getCookieMiddleware,
     getDummyHandler: oauth2.getDummyHandler,
+    getRequireAuthMiddleware: session.getRequireAuthMiddleware,
     getSessionMiddleware,
     logout: oauth2.logout,
     startOAuth2: oauth2.startOAuth2
