@@ -1,10 +1,13 @@
 import chai, { expect } from 'chai';
+import debugAgent from 'debug';
 import dirtyChai from 'dirty-chai';
 import _ from 'lodash';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import session, { getAnonSessionName, getSecureSessionName } from '../../lib/session';
+
+const debug = debugAgent( 'glados:unit-test' );
 
 chai.use( sinonChai );
 chai.use( dirtyChai );
@@ -62,6 +65,8 @@ describe( 'Glados includes a Session module that', function() {
 
                 it( 'resolves with the session ID and JWT token', function( done ) {
                     cookieStub = sinon.stub().callsFake( ( cookieName, cookieData, cookieOptions ) => {
+                        debug( 'Cookie Name: %s', cookieName );
+                        debug( 'Cookie Data: %s', cookieData );
                         expect( cookieName ).to.equal( getAnonSessionName() );
                         expect( typeof cookieData ).to.equal( 'string' );
                         sessionId = cookieData;
