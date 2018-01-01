@@ -11,7 +11,7 @@ chai.use( sinonChai );
 chai.use( chaiAsPromised );
 chai.use( dirtyChai );
 
-describe.only( 'Glados includes a CRSF Token Store module that', function() {
+describe( 'Glados includes a CRSF Token Store module that', function() {
     const badTokens = [ 9, [ 'one', 'two' ], { foo: 'bar' }, false ];
 
     beforeEach( function() {
@@ -29,7 +29,24 @@ describe.only( 'Glados includes a CRSF Token Store module that', function() {
     } );
 
     context( 'has a function `initialize`, which', function() {
-        // TODO >>> Add tests <<<
+        it( 'throws an error if the `context` argument is not an object', function() {
+            [
+                9,
+                'context',
+                false
+            ].forEach( function( badContext ) {
+                expect( function() {
+                    csrfStore.initialize( badContext );
+                } ).to.throw( Error, messageFactory.contextMustBeObject( badContext ) )
+            } );
+        } );
+
+        it( 'throws an error if store contains one or more items', function() {
+            csrfStore.storeToken( 'ive-got-a-bad-feeling-about-this' );
+            expect( function() {
+                csrfStore.initialize( {} );
+            } ).to.throw( Error, messageFactory.storeNotEmpty() );
+        } );
     } );
 
     context( 'has a function `storeToken`, which', function() {
