@@ -7,13 +7,13 @@ function getCookieMiddleware() {
 
 function getSessionMiddleware() {
     return function( request, response, next ) {
-        // TODO Does the session object persist between requests, or is it reloaded every time?
+        // TODO >>> Does the session object persist between requests, or is it reloaded every time?
         request.session = request.session || session.generateSessionObject();
         next();
     }
 }
 
-// TODO Create a `configure` function here that allows for DI but uses reasonable defaults, then configures the separate submodules
+// TODO >>> Create a `configure` function here that allows for DI but uses reasonable defaults, then configures the separate submodules
 
 const glados = {
     completeOAuth2: oauth2.completeOAuth2,
