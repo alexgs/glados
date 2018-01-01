@@ -245,7 +245,6 @@ describe.only( 'Glados includes an OAuth2 module that', function() {
 
         beforeEach( function() {
             utils._reset();
-            csrfStore._reset();
             oauth2.configure( gladosOptions, expressApp );
 
             anonIdStub = sinon.stub( session, 'setAnonymousSession' )
