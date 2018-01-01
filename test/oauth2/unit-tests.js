@@ -214,7 +214,7 @@ describe( 'Glados includes an OAuth2 module that', function() {
         } );
     } );
 
-    context.only( 'has a `completeOAuth2` function that returns a middleware function, which', function() {
+    context( 'has a `completeOAuth2` function that returns a middleware function, which', function() {
         let anonIdStub = null;          // stub session.setAnonymousSession
         let expressApp = {
             locals: { }
