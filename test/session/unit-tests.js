@@ -12,7 +12,14 @@ chai.use( dirtyChai );
 
 describe.only( 'Glados includes a Session module that', function() {
     context( 'adds a `session` object to the the Express Request object, which', function() {
-        it( 'can be accessed on the `request` object' );
+        it( 'can be accessed on the `request` object', function() {
+            const sessionObject = session.generateSessionObject();
+            const request = {
+                session: session.generateSessionObject()
+            };
+            expect( request.session ).to.deep.equal( sessionObject );
+
+        } );
 
         context( 'has a function `isAuthenticated` that', function() {
             let request = null;
@@ -65,7 +72,47 @@ describe.only( 'Glados includes a Session module that', function() {
 
     context( 'has a `getRequireAuthMiddleware` function, which returns a middleware function that', function() {
         context( 'can upgrade an "anonymous session" to a "secure session" with the following rules:', function() {
-            it( '(valid anonymous session): success' );
+            const anonTokenValue = 'Help me, Obi-wan. You\'re my only hope';
+            const loginPage = '/login';
+            let middleware = null;
+            let request = null;
+            let response = null;
+            const secureTokenValue = 'Many years ago, you served my father in the clone wars.';
+
+            beforeEach( function() {
+                middleware = null;
+                request = null;
+                response = null;
+            } );
+
+            it( '(valid anonymous session): success', function( done ) {
+                middleware = session.getRequireAuthMiddleware( loginPage );
+                request = {
+                    cookies: { [ getAnonSessionName() ]: anonTokenValue }
+                };
+                response = {
+                    clearCookie: sinon.stub(),
+                    cookie: sinon.stub(),
+                    redirect: doTest
+                };
+
+                function doTest() {
+                    expect( request.cookies[ getSecureSessionName() ] ).to.equal( anonTokenValue );
+
+                    expect( response.clearCookie ).to.have.been.calledOnce();
+                    const clearCookieArgs = response.clearCookie.args[0];
+                    expect( clearCookieArgs[0] ).to.equal( getAnonSessionName() );
+
+                    expect( response.cookie ).to.have.been.calledOnce();
+                    const setCookieArgs = response.cookie.args[0];
+                    expect( setCookieArgs[0] ).to.equal( getSecureSessionName() );
+                    expect( setCookieArgs[1] ).to.equal( anonTokenValue );
+
+                    done();
+                }
+
+                middleware( request, response, doTest );
+            } );
 
             it( '(invalid anonymous session): failure' );
 
@@ -75,7 +122,23 @@ describe.only( 'Glados includes a Session module that', function() {
         } );
 
         context( 'redirects to a login page if the session', function() {
-            it( 'is missing' );
+            const loginPage = '/login';
+            let middleware = null;
+            let request = null;
+            let response = null;
+
+            beforeEach( function() {
+                middleware = null;
+                request = null;
+                response = null;
+            } );
+
+            it.skip( 'is missing', function( done ) {
+                middleware = session.getRequireAuthMiddleware( loginPage );
+                middleware( request, response, () => {
+                    done();
+                } );
+            } );
 
             it( 'does not authenticate the user' );
         } );
