@@ -9,7 +9,7 @@ import session, { getAnonSessionName, getSecureSessionName } from '../../lib/ses
 chai.use( sinonChai );
 chai.use( dirtyChai );
 
-describe( 'Glados includes a Session module that', function() {
+describe.only( 'Glados includes a Session module that', function() {
     let cookieStub = null;
     let jwtToken = null;
     let request = null;
@@ -29,6 +29,51 @@ describe( 'Glados includes a Session module that', function() {
         response = {
             cookie: cookieStub
         };
+    } );
+
+    context( 'adds a `session` object to the the Express Request object, which', function() {
+        it( 'can be accessed on the `request` object' );
+
+        context( 'has a function `isAuthenticated` that', function() {
+            it( 'returns true if the request includes a valid secure cookie' );
+
+            it( 'returns false if the request includes an invalid secure cookie' );
+
+            it( 'returns false if the request does not include a secure cookie' );
+        } );
+    } );
+
+    context( 'has a `getRequireAuthMiddleware` function, which returns a middleware function that', function() {
+        context( 'can upgrade an "anonymous session" to a "secure session" with the following rules:', function() {
+            it( '(valid anonymous session): success' );
+
+            it( '(invalid anonymous session): failure' );
+
+            it( '(missing anonymous session): failure' );
+
+            it( '(valid secure session): no change' );
+        } );
+
+        context( 'redirects to a login page if the session', function() {
+            it( 'is missing' );
+
+            it( 'does not authenticate the user' );
+        } );
+
+        it( 'calls `next` if the user is authenticated in a "secure session"' );
+
+    } );
+
+    context( 'has a `getSessionKey` function, which', function() {
+        it( 'throws an error if the session key path has not been set' );
+
+        it( 'reads a text file and returns its contents' );
+    } );
+
+    context( 'has a `storeIdToken` function, which', function() {
+        it( 'stores the session ID and token in the session store' );
+
+        it( 'returns a Promise that resolves to an object with `idToken` and `sessionId` fields' );
     } );
 
     context( 'has a `setAnonymousSession` function, which', function() {
