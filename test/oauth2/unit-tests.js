@@ -18,7 +18,7 @@ const utils = {
 chai.use( sinonChai );
 chai.use( dirtyChai );
 
-describe.only( 'Glados includes an OAuth2 module that', function() {
+describe( 'Glados includes an OAuth2 module that', function() {
     context( 'has a `configure` method. This method', function() {
         let app = null;
         let options = null;
@@ -245,7 +245,6 @@ describe.only( 'Glados includes an OAuth2 module that', function() {
 
         beforeEach( function() {
             utils._reset();
-            csrfStore._reset();
             oauth2.configure( gladosOptions, expressApp );
 
             anonIdStub = sinon.stub( session, 'setAnonymousSession' )
