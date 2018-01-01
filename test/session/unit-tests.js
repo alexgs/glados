@@ -3,6 +3,7 @@ import dirtyChai from 'dirty-chai';
 import _ from 'lodash';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import sessionStore from '../../lib/session-store';
 
 import session, { getAnonSessionName, getSecureSessionName } from '../../lib/session';
 
@@ -10,36 +11,55 @@ chai.use( sinonChai );
 chai.use( dirtyChai );
 
 describe.only( 'Glados includes a Session module that', function() {
-    let cookieStub = null;
-    let jwtToken = null;
-    let request = null;
-    let response = null;
-    let sessionId = null;
-
-    beforeEach( function() {
-        sessionId = 'a-really-unique-session-id-1-2-3';
-        jwtToken = 'thats-the-combination-to-my-luggage';
-        cookieStub = sinon.stub();
-
-        request = {
-            cookies: {
-                [ getAnonSessionName() ]: sessionId
-            }
-        };
-        response = {
-            cookie: cookieStub
-        };
-    } );
-
     context( 'adds a `session` object to the the Express Request object, which', function() {
         it( 'can be accessed on the `request` object' );
 
         context( 'has a function `isAuthenticated` that', function() {
-            it( 'returns true if the request includes a valid secure cookie' );
+            let request = null;
+            let secureTokenValue = 'Many years ago, you served my father in the clone wars.';
 
-            it( 'returns false if the request includes an invalid secure cookie' );
+            beforeEach( function() {
+                request = null;
+            } );
 
-            it( 'returns false if the request does not include a secure cookie' );
+            it( 'returns true if the request includes a valid secure cookie', function() {
+                request = {
+                    cookies: {
+                        [ getSecureSessionName() ]: secureTokenValue
+                    },
+                    session: session.generateSessionObject()
+                };
+                const storeStub = sinon.stub( sessionStore, 'get' ).returns( 'Death Star Schematics' );
+
+                expect( request.session.isAuthenticated( request ) ).to.equal( true );
+                storeStub.restore();
+            } );
+
+            it( 'returns false if the request includes an invalid secure cookie', function() {
+                request = {
+                    cookies: {
+                        [ getSecureSessionName() ]: secureTokenValue
+                    },
+                    session: session.generateSessionObject()
+                };
+                const storeStub = sinon.stub( sessionStore, 'get' ).returns( false );
+
+                expect( request.session.isAuthenticated( request ) ).to.equal( false );
+                storeStub.restore();
+            } );
+
+            it( 'returns false if the request does not include a secure cookie', function() {
+                request = {
+                    cookies: {
+                        'bad-cookie-name' : secureTokenValue
+                    },
+                    session: session.generateSessionObject()
+                };
+                const storeStub = sinon.stub( sessionStore, 'get' ).returns( 'Death Star Schematics' );
+
+                expect( request.session.isAuthenticated( request ) ).to.equal( false );
+                storeStub.restore();
+            } );
         } );
     } );
 
@@ -77,6 +97,27 @@ describe.only( 'Glados includes a Session module that', function() {
     } );
 
     context( 'has a `setAnonymousSession` function, which', function() {
+        let cookieStub = null;
+        let jwtToken = null;
+        let request = null;
+        let response = null;
+        let sessionId = null;
+
+        beforeEach( function() {
+            sessionId = 'a-really-unique-session-id-1-2-3';
+            jwtToken = 'thats-the-combination-to-my-luggage';
+            cookieStub = sinon.stub();
+
+            request = {
+                cookies: {
+                    [ getAnonSessionName() ]: sessionId
+                }
+            };
+            response = {
+                cookie: cookieStub
+            };
+        } );
+
         context( 'returns a Promise that', function() {
             it( '(if the cookie is sent from the client) resolves with the session ID and JWT token', function( done ) {
                 session.setAnonymousSession( request, response, jwtToken )
