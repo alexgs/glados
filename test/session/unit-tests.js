@@ -93,10 +93,10 @@ describe.only( 'Glados includes a Session module that', function() {
                 response = {
                     clearCookie: sinon.stub(),
                     cookie: sinon.stub(),
-                    redirect: doTest
+                    redirect: runTests
                 };
 
-                function doTest() {
+                function runTests() {
                     expect( request.cookies[ getSecureSessionName() ] ).to.equal( anonTokenValue );
 
                     expect( response.clearCookie ).to.have.been.calledOnce();
@@ -111,7 +111,7 @@ describe.only( 'Glados includes a Session module that', function() {
                     done();
                 }
 
-                middleware( request, response, doTest );
+                middleware( request, response, runTests );
             } );
 
             it( '(invalid anonymous session): failure' );
@@ -133,14 +133,37 @@ describe.only( 'Glados includes a Session module that', function() {
                 response = null;
             } );
 
-            it.skip( 'is missing', function( done ) {
-                middleware = session.getRequireAuthMiddleware( loginPage );
-                middleware( request, response, () => {
+            it( 'is missing', function( done ) {
+                function runTests() {
+                    expect( response.redirect ).to.have.been.calledOnce();
+                    expect( response.redirect ).to.have.been.calledWith( loginPage );
                     done();
-                } );
+                }
+                request = {};
+                response = {
+                    redirect: sinon.stub().callsFake( runTests )
+                };
+
+                middleware = session.getRequireAuthMiddleware( loginPage );
+                middleware( request, response, runTests );
             } );
 
-            it( 'does not authenticate the user' );
+            it( 'does not authenticate the user', function( done ) {
+                function runTests() {
+                    expect( response.redirect ).to.have.been.calledOnce();
+                    expect( response.redirect ).to.have.been.calledWith( loginPage );
+                    done();
+                }
+                request = {
+                    session: { isAuthenticated: sinon.stub().returns( false ) }
+                };
+                response = {
+                    redirect: sinon.stub().callsFake( runTests )
+                };
+
+                middleware = session.getRequireAuthMiddleware( loginPage );
+                middleware( request, response, runTests );
+            } );
         } );
 
         it( 'calls `next` if the user is authenticated in a "secure session"', function( done ) {
