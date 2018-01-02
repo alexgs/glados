@@ -86,17 +86,10 @@ describe.only( 'Glados includes a Session module that', function() {
             } );
 
             it( '(valid anonymous session): success', function( done ) {
-                middleware = session.getRequireAuthMiddleware( loginPage );
-                request = {
-                    cookies: { [ getAnonSessionName() ]: anonTokenValue }
-                };
-                response = {
-                    clearCookie: sinon.stub(),
-                    cookie: sinon.stub(),
-                    redirect: runTests
-                };
-
                 function runTests() {
+                    expect( storeStub ).to.have.been.calledOnce();
+                    expect( storeStub ).to.have.been.calledWith( anonTokenValue );
+
                     expect( request.cookies[ getSecureSessionName() ] ).to.equal( anonTokenValue );
 
                     expect( response.clearCookie ).to.have.been.calledOnce();
@@ -108,13 +101,49 @@ describe.only( 'Glados includes a Session module that', function() {
                     expect( setCookieArgs[0] ).to.equal( getSecureSessionName() );
                     expect( setCookieArgs[1] ).to.equal( anonTokenValue );
 
+                    storeStub.restore();
                     done();
                 }
 
+                request = {
+                    cookies: { [ getAnonSessionName() ]: anonTokenValue }
+                };
+                response = {
+                    clearCookie: sinon.stub(),
+                    cookie: sinon.stub(),
+                    redirect: runTests
+                };
+                const storeStub = sinon.stub( sessionStore, 'get' ).returns( true );
+
+                middleware = session.getRequireAuthMiddleware( loginPage );
                 middleware( request, response, runTests );
             } );
 
-            it( '(invalid anonymous session): failure' );
+            it( '(invalid anonymous session): failure', function( done ) {
+                function runTests() {
+                    expect( storeStub ).to.have.been.calledOnce();
+                    expect( storeStub ).to.have.been.calledWith( anonTokenValue );
+                    expect( response.redirect ).to.have.been.calledOnce();
+                    expect( response.redirect ).to.have.been.calledWith( loginPage );
+                    expect( response.clearCookie.notCalled ).to.equal( true );
+                    expect( response.cookie.notCalled ).to.equal( true );
+                    storeStub.restore();
+                    done();
+                }
+
+                request = {
+                    cookies: { [ getAnonSessionName() ]: anonTokenValue }
+                };
+                response = {
+                    clearCookie: sinon.stub(),
+                    cookie: sinon.stub(),
+                    redirect: sinon.stub().callsFake( runTests )
+                };
+                const storeStub = sinon.stub( sessionStore, 'get' ).returns( false );
+
+                middleware = session.getRequireAuthMiddleware( loginPage );
+                middleware( request, response, runTests );
+            } );
 
             it( '(missing anonymous session): failure' );
 
