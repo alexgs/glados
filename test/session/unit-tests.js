@@ -145,9 +145,48 @@ describe.only( 'Glados includes a Session module that', function() {
                 middleware( request, response, runTests );
             } );
 
-            it( '(missing anonymous session): failure' );
+            it( '(missing anonymous session): failure', function( done ) {
+                function runTests() {
+                    expect( storeStub.notCalled ).to.equal( true );
+                    expect( response.redirect ).to.have.been.calledOnce();
+                    expect( response.redirect ).to.have.been.calledWith( loginPage );
+                    expect( response.clearCookie.notCalled ).to.equal( true );
+                    expect( response.cookie.notCalled ).to.equal( true );
+                    storeStub.restore();
+                    done();
+                }
 
-            it( '(valid secure session): no change' );
+                request = {};
+                response = {
+                    clearCookie: sinon.stub(),
+                    cookie: sinon.stub(),
+                    redirect: sinon.stub().callsFake( runTests )
+                };
+                const storeStub = sinon.stub( sessionStore, 'get' ).returns( false );
+
+                middleware = session.getRequireAuthMiddleware( loginPage );
+                middleware( request, response, runTests );
+            } );
+
+            it( '(valid secure session): no change', function( done ) {
+                function runTests() {
+                    expect( request.session.isAuthenticated ).to.be.calledOnce();
+                    expect( request.session.isAuthenticated ).to.be.calledWith( request );
+                    expect( response.redirect.notCalled ).to.equal( true );
+                    done();
+                }
+
+                request = {
+                    cookies: { [ getSecureSessionName() ]: secureTokenValue },
+                    session: { isAuthenticated: sinon.stub().returns( true ) }
+                };
+                response = {
+                    redirect: sinon.stub().callsFake( runTests )
+                };
+
+                const middleware = session.getRequireAuthMiddleware( loginPage );
+                middleware( request, response, runTests );
+            } );
         } );
 
         context( 'redirects to a login page if the session', function() {
@@ -196,17 +235,25 @@ describe.only( 'Glados includes a Session module that', function() {
         } );
 
         it( 'calls `next` if the user is authenticated in a "secure session"', function( done ) {
+            function runTests() {
+                expect( request.session.isAuthenticated ).to.be.calledOnce();
+                expect( request.session.isAuthenticated ).to.be.calledWith( request );
+                expect( response.redirect.notCalled ).to.equal( true );
+                done();
+            }
+
             const loginPage = '/login';
-            const middleware = session.getRequireAuthMiddleware( loginPage );
+            const secureTokenValue = 'Many years ago, you served my father in the clone wars.';
             const request = {
+                cookies: { [ getSecureSessionName() ]: secureTokenValue },
                 session: { isAuthenticated: sinon.stub().returns( true ) }
             };
-            const response = {};
+            const response = {
+                redirect: sinon.stub().callsFake( runTests )
+            };
 
-            middleware( request, response, () => {
-                expect( request.session.isAuthenticated ).to.be.calledOnce();
-                done();
-            } );
+            const middleware = session.getRequireAuthMiddleware( loginPage );
+            middleware( request, response, runTests );
         } );
 
     } );
