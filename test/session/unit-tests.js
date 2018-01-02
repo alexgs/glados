@@ -143,7 +143,19 @@ describe.only( 'Glados includes a Session module that', function() {
             it( 'does not authenticate the user' );
         } );
 
-        it( 'calls `next` if the user is authenticated in a "secure session"' );
+        it( 'calls `next` if the user is authenticated in a "secure session"', function( done ) {
+            const loginPage = '/login';
+            const middleware = session.getRequireAuthMiddleware( loginPage );
+            const request = {
+                session: { isAuthenticated: sinon.stub().returns( true ) }
+            };
+            const response = {};
+
+            middleware( request, response, () => {
+                expect( request.session.isAuthenticated ).to.be.calledOnce();
+                done();
+            } );
+        } );
 
     } );
 
