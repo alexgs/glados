@@ -124,7 +124,7 @@ describe( 'Glados includes an OAuth2 module that', function() {
             const stub = sinon.stub( session, 'setAnonymousSession' )
                 .callsFake( () => Promise.resolve( {
                     sessionId: 'fake-session-id',
-                    idToken: 'fake-id-token'
+                    jwtToken: 'fake-id-token'
                 } ) );
             const request = {};
             const response = {
@@ -238,7 +238,7 @@ describe( 'Glados includes an OAuth2 module that', function() {
             done();
         };
         let response = null;            // fake Express response object
-        let saveStub = null;            // stub session.storeIdToken
+        let saveStub = null;            // stub session.storeJwtToken
         let token = null;
         let validateStub = null;        // stub jwt.validateClaims
         let verifyStub = null;          // stub jwt.verifyToken
@@ -248,13 +248,13 @@ describe( 'Glados includes an OAuth2 module that', function() {
             oauth2.configure( gladosOptions, expressApp );
 
             anonIdStub = sinon.stub( session, 'setAnonymousSession' )
-                .callsFake( ({ sessionId, idToken }) => Promise.resolve( { sessionId, idToken } ) );
+                .callsFake( ({ sessionId, jwtToken }) => Promise.resolve( { sessionId, jwtToken } ) );
             fakeResponse = {
                 ok: true,
                 body: {
                     accessToken: 'random-access-token',
                     refreshToken: 'random-refresh-token',
-                    idToken: 'random-id-token'
+                    jwtToken: 'random-id-token'
                 }
             };
             postResult = {
@@ -273,8 +273,8 @@ describe( 'Glados includes an OAuth2 module that', function() {
             response = {
                 cookie: function( name, data, options ) { /* do nothing */ }
             };
-            saveStub = sinon.stub( session, 'storeIdToken' )
-                .callsFake( ( sessionId, idToken ) => Promise.resolve( { sessionId, idToken } ) );
+            saveStub = sinon.stub( session, 'storeJwtToken' )
+                .callsFake( ( sessionId, jwtToken ) => Promise.resolve( { sessionId, jwtToken } ) );
             validateStub = sinon.stub( jwt, 'validateClaims' ).returns( true );
             verifyStub = sinon.stub( jwt, 'verifySignature' ).returns( true );
         } );
@@ -305,7 +305,8 @@ describe( 'Glados includes an OAuth2 module that', function() {
             };
 
             routeMiddleware( request, response, () => {
-                throw new Error( 'Done function invoked.' );
+                // throw new Error( 'Done function invoked.' );
+                resetAll( done );
             } );
         } );
 
