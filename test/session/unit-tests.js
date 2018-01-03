@@ -10,7 +10,7 @@ import session, { getAnonSessionName, getSecureSessionName } from '../../lib/ses
 chai.use( sinonChai );
 chai.use( dirtyChai );
 
-describe.only( 'Glados includes a Session module that', function() {
+describe( 'Glados includes a Session module that', function() {
     context( 'adds a `session` object to the the Express Request object, which', function() {
         it( 'can be accessed on the `request` object', function() {
             const sessionObject = session.generateSessionObject();
@@ -264,10 +264,40 @@ describe.only( 'Glados includes a Session module that', function() {
         it( 'reads a text file and returns its contents' );
     } );
 
-    context( 'has a `storeIdToken` function, which', function() {
-        it( 'stores the session ID and token in the session store' );
+    context( 'has a `storeJwtToken` function, which', function() {
+        it( 'stores the session ID and token in the session store', function( done ) {
+            const sessionId = 'What in the Wide Wide World of Sports';
+            const jwtIdToken = {
+                email: 'slim@pickens.com',
+                iss: 'https://blazing.saddl.es',
+                aud: 'Mel Brooks'
+            };
+            const storeStub = sinon.stub( sessionStore, 'upsert' );
 
-        it( 'returns a Promise that resolves to an object with `idToken` and `sessionId` fields' );
+            session.storeJwtToken( sessionId, jwtIdToken )
+                .then( () => {
+                    expect( storeStub ).to.have.been.calledOnce();
+                    expect( storeStub ).to.have.been.calledWith( sessionId, jwtIdToken );
+                    storeStub.restore();
+                    done();
+                } );
+        } );
+
+        it( 'returns a Promise that resolves to an object with `jwtToken` and `sessionId` fields', function( done ) {
+            const sessionId = 'What in the Wide Wide World of Sports';
+            const jwtIdToken = {
+                email: 'slim@pickens.com',
+                iss: 'https://blazing.saddl.es',
+                aud: 'Mel Brooks'
+            };
+
+            session.storeJwtToken( sessionId, jwtIdToken )
+                .then( result => {
+                    expect( result.jwtToken ).to.deep.equal( jwtIdToken );
+                    expect( result.sessionId ).to.equal( sessionId );
+                    done();
+                } );
+        } );
     } );
 
     context( 'has a `setAnonymousSession` function, which', function() {
@@ -296,7 +326,7 @@ describe.only( 'Glados includes a Session module that', function() {
             it( '(if the cookie is sent from the client) resolves with the session ID and JWT token', function( done ) {
                 session.setAnonymousSession( request, response, jwtToken )
                     .then( ( result ) => {
-                        expect( result.idToken ).to.equal( jwtToken );
+                        expect( result.jwtToken ).to.equal( jwtToken );
                         expect( result.sessionId ).to.equal( request.cookies[ getAnonSessionName() ] );
                         done();
                     } );
@@ -333,7 +363,7 @@ describe.only( 'Glados includes a Session module that', function() {
 
                     session.setAnonymousSession( request, response, jwtToken )
                         .then( ( result ) => {
-                            expect( result.idToken ).to.equal( jwtToken );
+                            expect( result.jwtToken ).to.equal( jwtToken );
                             expect( result.sessionId ).to.equal( sessionId );
                             done();
                         } );
