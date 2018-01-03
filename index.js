@@ -13,6 +13,9 @@ function getSessionMiddleware() {
     }
 }
 
+// TODO >>> Write end-to-end tests using Express
+//          + Copy `express-app-prototype` to a separate project called `express-glados`
+//          + Write e2e tests in "Nighthawk" or whatever
 // TODO >>> Create a `configure` function here that allows for DI but uses reasonable defaults, then configures the separate submodules
 
 const glados = {
