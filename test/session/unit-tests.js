@@ -189,14 +189,19 @@ describe( 'Glados includes a Session module that', function() {
         } );
 
         context( 'redirects to a login page if the session', function() {
+            const anonTokenValue = 'Help me, Obi-wan. You\'re my only hope';
             const loginPage = '/login';
             let middleware = null;
             let request = null;
             let response = null;
+            const secureTokenValue = 'Many years ago, you served my father in the clone wars.';
 
             beforeEach( function() {
                 middleware = null;
-                request = null;
+                request = {
+                    cookies: { [ getAnonSessionName() ]: anonTokenValue },
+                    session: { isAuthenticated: sinon.stub().returns( authFailureResult ) }
+                };
                 response = null;
             } );
 
@@ -206,7 +211,7 @@ describe( 'Glados includes a Session module that', function() {
                     expect( response.redirect ).to.have.been.calledWith( loginPage );
                     done();
                 }
-                request = {};
+                request.cookies = {};
                 response = {
                     redirect: sinon.stub().callsFake( runTests )
                 };
@@ -217,13 +222,13 @@ describe( 'Glados includes a Session module that', function() {
 
             it( 'does not authenticate the user', function( done ) {
                 function runTests() {
+                    expect( request.session.isAuthenticated ).to.have.been.calledOnce();
+                    expect( request.session.isAuthenticated ).to.have.been.calledWith( request );
                     expect( response.redirect ).to.have.been.calledOnce();
                     expect( response.redirect ).to.have.been.calledWith( loginPage );
                     done();
                 }
-                request = {
-                    session: { isAuthenticated: sinon.stub().returns( false ) }
-                };
+                request.cookies = { [ getSecureSessionName() ]: secureTokenValue };
                 response = {
                     redirect: sinon.stub().callsFake( runTests )
                 };
@@ -245,7 +250,7 @@ describe( 'Glados includes a Session module that', function() {
             const secureTokenValue = 'Many years ago, you served my father in the clone wars.';
             const request = {
                 cookies: { [ getSecureSessionName() ]: secureTokenValue },
-                session: { isAuthenticated: sinon.stub().returns( true ) }
+                session: { isAuthenticated: sinon.stub().returns( authSuccessResult ) }
             };
             const response = {
                 redirect: sinon.stub().callsFake( runTests )
