@@ -4,6 +4,7 @@ import dirtyChai from 'dirty-chai';
 import _ from 'lodash';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import { ERROR_SOURCE } from '../../lib/constants';
 import sessionStore from '../../lib/session-store';
 
 import session, { getAnonSessionName, getSecureSessionName } from '../../lib/session';
@@ -41,7 +42,7 @@ describe( 'Glados includes a Session module that', function() {
                 };
                 const storeStub = sinon.stub( sessionStore, 'get' ).returns( 'Death Star Schematics' );
 
-                expect( request.session.isAuthenticated( request ) ).to.equal( true );
+                expect( request.session.isAuthenticated( request ).value ).to.equal( true );
                 storeStub.restore();
             } );
 
@@ -54,7 +55,7 @@ describe( 'Glados includes a Session module that', function() {
                 };
                 const storeStub = sinon.stub( sessionStore, 'get' ).returns( false );
 
-                expect( request.session.isAuthenticated( request ) ).to.equal( false );
+                expect( request.session.isAuthenticated( request ).value ).to.equal( false );
                 storeStub.restore();
             } );
 
@@ -67,31 +68,55 @@ describe( 'Glados includes a Session module that', function() {
                 };
                 const storeStub = sinon.stub( sessionStore, 'get' ).returns( 'Death Star Schematics' );
 
-                expect( request.session.isAuthenticated( request ) ).to.equal( false );
+                expect( request.session.isAuthenticated( request ).value ).to.equal( false );
                 storeStub.restore();
             } );
         } );
     } );
 
     context( 'has a `getRequireAuthMiddleware` function, which returns a middleware function that', function() {
+        const authFailureResult = {
+            value: false,
+            reason: ERROR_SOURCE.SECURE_SESSION.INVALID
+        };
+        const authSuccessResult = {
+            value: true,
+            reason: null
+        };
+
         context( 'can upgrade an "anonymous session" to a "secure session" with the following rules:', function() {
             const anonTokenValue = 'Help me, Obi-wan. You\'re my only hope';
             const loginPage = '/login';
             let middleware = null;
             let request = null;
             let response = null;
+            const sandbox = sinon.createSandbox();
             const secureTokenValue = 'Many years ago, you served my father in the clone wars.';
 
             beforeEach( function() {
+                // Restore original functions
+                sandbox.restore();
+
                 middleware = null;
-                request = null;
-                response = null;
+                request = {
+                    cookies: { [ getAnonSessionName() ]: anonTokenValue },
+                    session: { isAuthenticated: sandbox.stub().returns( authSuccessResult ) }
+                };
+                response = {
+                    clearCookie: sandbox.stub(),
+                    cookie: sandbox.stub(),
+                    redirect: sandbox.stub()
+                };
+            } );
+
+            after( function() {
+                sandbox.restore();
             } );
 
             it( '(valid anonymous session): success', function( done ) {
                 function runTests() {
-                    expect( storeStub ).to.have.been.calledOnce();
-                    expect( storeStub ).to.have.been.calledWith( anonTokenValue );
+                    expect( sessionStore.get ).to.have.been.calledOnce();
+                    expect( sessionStore.get ).to.have.been.calledWith( anonTokenValue );
 
                     expect( request.cookies[ getSecureSessionName() ] ).to.equal( anonTokenValue );
 
@@ -104,19 +129,11 @@ describe( 'Glados includes a Session module that', function() {
                     expect( setCookieArgs[0] ).to.equal( getSecureSessionName() );
                     expect( setCookieArgs[1] ).to.equal( anonTokenValue );
 
-                    storeStub.restore();
+                    expect( response.redirect.notCalled ).to.equal( true );
                     done();
                 }
-
-                request = {
-                    cookies: { [ getAnonSessionName() ]: anonTokenValue }
-                };
-                response = {
-                    clearCookie: sinon.stub(),
-                    cookie: sinon.stub(),
-                    redirect: runTests
-                };
-                const storeStub = sinon.stub( sessionStore, 'get' ).returns( true );
+                response.redirect = sandbox.stub().callsFake( runTests );
+                sandbox.stub( sessionStore, 'get' ).returns( true );
 
                 middleware = session.getRequireAuthMiddleware( loginPage );
                 middleware( request, response, runTests );
@@ -124,25 +141,16 @@ describe( 'Glados includes a Session module that', function() {
 
             it( '(invalid anonymous session): failure', function( done ) {
                 function runTests() {
-                    expect( storeStub ).to.have.been.calledOnce();
-                    expect( storeStub ).to.have.been.calledWith( anonTokenValue );
+                    expect( sessionStore.get ).to.have.been.calledOnce();
+                    expect( sessionStore.get ).to.have.been.calledWith( anonTokenValue );
                     expect( response.redirect ).to.have.been.calledOnce();
                     expect( response.redirect ).to.have.been.calledWith( loginPage );
                     expect( response.clearCookie.notCalled ).to.equal( true );
                     expect( response.cookie.notCalled ).to.equal( true );
-                    storeStub.restore();
                     done();
                 }
-
-                request = {
-                    cookies: { [ getAnonSessionName() ]: anonTokenValue }
-                };
-                response = {
-                    clearCookie: sinon.stub(),
-                    cookie: sinon.stub(),
-                    redirect: sinon.stub().callsFake( runTests )
-                };
-                const storeStub = sinon.stub( sessionStore, 'get' ).returns( false );
+                response.redirect = sandbox.stub().callsFake( runTests );
+                sandbox.stub( sessionStore, 'get' ).returns( false );
 
                 middleware = session.getRequireAuthMiddleware( loginPage );
                 middleware( request, response, runTests );
@@ -150,22 +158,16 @@ describe( 'Glados includes a Session module that', function() {
 
             it( '(missing anonymous session): failure', function( done ) {
                 function runTests() {
-                    expect( storeStub.notCalled ).to.equal( true );
+                    expect( sessionStore.get.notCalled ).to.equal( true );
                     expect( response.redirect ).to.have.been.calledOnce();
                     expect( response.redirect ).to.have.been.calledWith( loginPage );
                     expect( response.clearCookie.notCalled ).to.equal( true );
                     expect( response.cookie.notCalled ).to.equal( true );
-                    storeStub.restore();
                     done();
                 }
-
-                request = {};
-                response = {
-                    clearCookie: sinon.stub(),
-                    cookie: sinon.stub(),
-                    redirect: sinon.stub().callsFake( runTests )
-                };
-                const storeStub = sinon.stub( sessionStore, 'get' ).returns( false );
+                delete request.cookies[ getAnonSessionName() ];
+                response.redirect = sandbox.stub().callsFake( runTests );
+                sandbox.stub( sessionStore, 'get' );
 
                 middleware = session.getRequireAuthMiddleware( loginPage );
                 middleware( request, response, runTests );
@@ -178,14 +180,8 @@ describe( 'Glados includes a Session module that', function() {
                     expect( response.redirect.notCalled ).to.equal( true );
                     done();
                 }
-
-                request = {
-                    cookies: { [ getSecureSessionName() ]: secureTokenValue },
-                    session: { isAuthenticated: sinon.stub().returns( true ) }
-                };
-                response = {
-                    redirect: sinon.stub().callsFake( runTests )
-                };
+                delete request.cookies[ getAnonSessionName() ];
+                request.cookies[ getSecureSessionName() ] = secureTokenValue;
 
                 const middleware = session.getRequireAuthMiddleware( loginPage );
                 middleware( request, response, runTests );
