@@ -1,5 +1,8 @@
+import debugAgent from 'debug';
 import oauth2 from './lib/oauth2';
 import session from './lib/session';
+
+const debug = debugAgent( 'glados:core' );
 
 function getCookieMiddleware() {
     // TODO Copy the guts of the `cookie-parser` library here
@@ -7,15 +10,18 @@ function getCookieMiddleware() {
 
 function getSessionMiddleware() {
     return function( request, response, next ) {
-        // TODO >>> Does the session object persist between requests, or is it reloaded every time?
-        request.session = request.session || session.generateSessionObject();
+        if ( request.session ) {
+            // The session object **DOES NOT** persist between requests. This never gets called; it's just here to
+            // document this behavior
+            debug( 'Existing session: %O', request.session );
+        } else {
+            debug( 'Generating new session' );
+            request.session = session.generateSessionObject();
+        }
         next();
     }
 }
 
-// TODO >>> Write end-to-end tests using Express
-//          + Copy `express-app-prototype` to a separate project called `express-glados`
-//          + Write e2e tests in "Nighthawk" or whatever
 // TODO >>> Create a `configure` function here that allows for DI but uses reasonable defaults, then configures the separate submodules
 
 const glados = {
