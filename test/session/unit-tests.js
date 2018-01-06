@@ -146,114 +146,14 @@ describe.only( 'Glados includes a Session module that', function() {
                     done();
                 }
                 response.redirect = sandbox.stub().callsFake( runTests );
-                sandbox.stub( sessionStore, 'get' ).returns( true );
-
-                middleware = session.getRequireAuthMiddleware( loginPage );
-                middleware( request, response, runTests );
-            } );
-
-            it.only( '[Chai-as-Promised] valid anonymous session   --> success', function( done ) {
-                // function runTests() {
-                //     expect( sessionStore.get ).to.have.been.calledOnce();
-                //     expect( sessionStore.get ).to.have.been.calledWith( anonTokenValue );
-                //
-                //     expect( request.cookies[ getSecureSessionName() ] ).to.equal( anonTokenValue );
-                //
-                //     expect( response.clearCookie ).to.have.been.calledOnce();
-                //     const clearCookieArgs = response.clearCookie.args[0];
-                //     expect( clearCookieArgs[0] ).to.equal( getAnonSessionName() );
-                //
-                //     expect( response.cookie ).to.have.been.calledOnce();
-                //     const setCookieArgs = response.cookie.args[0];
-                //     expect( setCookieArgs[0] ).to.equal( getSecureSessionName() );
-                //     expect( setCookieArgs[1] ).to.equal( anonTokenValue );
-                //
-                //     expect( response.redirect.notCalled ).to.equal( true );
-                //     done();
-                // }
-                // response.redirect = sandbox.stub().callsFake( runTests );
-                sandbox.stub( sessionStore, 'get' ).returns( false );
-                // sandbox.stub( sessionStore, 'get' ).returns( {
-                //     jwtToken: 'fake-token',
-                //     type: SESSION_DOCUMENT.TYPE.ANONYMOUS
-                // } );
+                sandbox.stub( sessionStore, 'get' ).returns( {
+                    jwtToken: 'fake-token',
+                    type: SESSION_DOCUMENT.TYPE.ANONYMOUS
+                } );
                 sandbox.stub( userStore, 'getOrCreate' ).returns( fakeUserRecord );
 
                 middleware = session.getRequireAuthMiddleware( loginPage );
-                const middlewarePromise = new Promise( ( resolve, reject ) => {
-                    response.redirect = sandbox.stub().callsFake( reject );
-                    middleware( request, response, resolve );
-                } );
-
-                // expect( middlewarePromise ).to.be.rejected.and.notify( function() {
-                expect( middlewarePromise ).to.be.fulfilled.and.notify( function() {
-                // expect( middlewarePromise ).to.be.eventually.fulfilled.then( function() {
-                // expect( middlewarePromise ).to.eventually.equal( function() {
-                // expect( middlewarePromise ).to.be.fulfilled();
-                // expect( sessionStore.get ).to.eventually.have.been.calledOnce();
-                // ( {
-                    expect( sessionStore.get ).to.have.been.calledOnce();
-                    expect( sessionStore.get ).to.have.been.calledWith( anonTokenValue );
-
-                    expect( request.cookies[ getSecureSessionName() ] ).to.equal( anonTokenValue );
-
-                    expect( response.clearCookie ).to.have.been.calledOnce();
-                    const clearCookieArgs = response.clearCookie.args[0];
-                    expect( clearCookieArgs[0] ).to.equal( getAnonSessionName() );
-
-                    expect( response.cookie ).to.have.been.calledOnce();
-                    const setCookieArgs = response.cookie.args[0];
-                    expect( setCookieArgs[0] ).to.equal( getSecureSessionName() );
-                    expect( setCookieArgs[1] ).to.equal( anonTokenValue );
-
-                    expect( response.redirect.notCalled ).to.equal( true );
-                    done()
-                } );
-            } );
-
-            it( 'Promise 1', function() {
-                const dummy = {
-                    add: sinon.stub().returns( 4 )
-                };
-                // return expect( Promise.resolve( dummy.add() ) ).to.be.fulfilled;
-                return expect( Promise.resolve( dummy.add() ) ).to.be.fulfilled.and.eventually.equal( 2 + 2 );
-                // return expect( Promise.resolve( dummy.add() ) ).to.be.fulfilled.then( function() {
-                //     expect( dummy.add ).to.have.been.calledOnce();
-                // } );
-            } );
-
-            it( 'Promise 2', function( done ) {
-                const dummy = {
-                    add: sinon.stub().returns( 4 )
-                };
-                // return expect( Promise.resolve( dummy.add() ) ).to.be.fulfilled;
-                expect( Promise.resolve( dummy.add() ) ).to.eventually.equal( 2 + 2 ).notify( done );
-                // return expect( Promise.resolve( dummy.add() ) ).to.be.fulfilled.then( function() {
-                //     expect( dummy.add ).to.have.been.calledOnce();
-                // } );
-            } );
-
-            it( 'Promise 3', function( done ) {
-                const dummy = {
-                    add: sinon.stub().returns( 4 )
-                };
-                // return expect( Promise.resolve( dummy.add() ) ).to.be.fulfilled;
-                // expect( Promise.resolve( dummy.add() ) ).to.eventually.equal( 2 + 2 ).notify(  function() {
-                expect( Promise.resolve( dummy.add() ) ).to.be.fulfilled.and.notify( function() {
-                    expect( dummy.add ).to.have.been.calledOnce();
-                    done();
-                } );
-            } );
-
-            it.skip( 'Promise 4', function( done ) {
-                const dummy = {
-                    add: sinon.stub().returns( Promise.resolve(4) )
-                };
-                // return expect( Promise.resolve( dummy.add() ) ).to.be.fulfilled;
-                // expect( Promise.resolve( dummy.add() ) ).to.eventually.equal( 2 + 2 ).notify( done );
-                expect( Promise.resolve( dummy.add() ) ).to.be.fulfilled.then( function() {
-                    expect( dummy.add ).to.have.been.calledOnce();
-                } ).notify( done );
+                middleware( request, response, runTests );
             } );
 
             it( 'invalid anonymous session --> failure', function( done ) {
@@ -601,7 +501,7 @@ describe.only( 'Glados includes a Session module that', function() {
             };
             const storeDocument = {
                 jwtToken: jwtIdToken,
-                type: 'anonymous'
+                type: SESSION_DOCUMENT.TYPE.ANONYMOUS
             };
             const storeStub = sinon.stub( sessionStore, 'upsert' );
 
