@@ -25,15 +25,19 @@ describe( 'Glados includes a JWT module that', function() {
             iss: `https://${fakeDomain}/`,
             aud: fakeClientId,
         };
+
         context( 'throws an error if the token', function() {
             it( 'has expired', function() {
+                function timestampToSeconds( unixTimestamp ) {
+                    return Math.floor( unixTimestamp / 1000 );
+                }
                 const dateStub = sinon.stub( Date, 'now' ).returns( now );
 
-                const expires = now - ms( '1d' );
+                const expires = timestampToSeconds( now - ms( '1d' ) );
                 const badToken = _.merge( {}, validToken, { exp: expires } );
                 expect( function() {
                     jwt.validateClaims( badToken, fakeDomain, fakeClientId );
-                } ).to.throw( Error, messages.expiredToken( now, expires ) );
+                } ).to.throw( Error, messages.expiredToken( timestampToSeconds( now ), expires ) );
 
                 dateStub.restore();
             } );

@@ -1,14 +1,24 @@
+import debugAgent from 'debug';
 import oauth2 from './lib/oauth2';
 import session from './lib/session';
 
+const debug = debugAgent( 'glados:core' );
+
 function getCookieMiddleware() {
-    // TODO Copy the guts of the `cookie-parser` library here
+    // TODO >>> Copy the guts of the `cookie-parser` library here
+    // TODO >>> Implement signing and encrypting cookies
 }
 
 function getSessionMiddleware() {
     return function( request, response, next ) {
-        // TODO >>> Does the session object persist between requests, or is it reloaded every time?
-        request.session = request.session || session.generateSessionObject();
+        if ( request.session ) {
+            // The session object **DOES NOT** persist between requests. This never gets called; it's just here to
+            // document this behavior
+            debug( 'Existing session: %O', request.session );
+        } else {
+            debug( 'Generating new session' );
+            request.session = session.generateSessionObject();
+        }
         next();
     }
 }
