@@ -194,22 +194,80 @@ describe.only( 'Glados includes a Session module that', function() {
             let middleware = null;
             let request = null;
             let response = null;
+            const sandbox = sinon.createSandbox();
             const secureTokenValue = 'Many years ago, you served my father in the clone wars.';
 
             beforeEach( function() {
+                // Start with a pristine sandbox
+                sandbox.restore();
+
                 middleware = null;
                 request = {
                     cookies: { [ getAnonSessionName() ]: anonTokenValue },
-                    session: { isAuthenticated: sinon.stub().returns( authFailureResult ) }
+                    session: { isAuthenticated: sandbox.stub().returns( authFailureResult ) }
                 };
-                response = null;
+                response = {
+                    redirect: sandbox.stub()
+                };
             } );
 
-            it( 'the anonymous session is invalid' );
+            after( function() {
+                sandbox.restore();
+            } );
 
-            it( 'the anonymous session is missing' );
+            it( 'the anonymous session is invalid', function( done ) {
+                function runTests() {
+                    expect( sessionStore.get ).to.have.been.calledOnce();
+                    expect( sessionStore.get ).to.have.been.calledWith( anonTokenValue );
+                    expect( response.redirect ).to.have.been.calledOnce();
+                    expect( response.redirect ).to.have.been.calledWith( loginPage );
+                    expect( request.session.isAuthenticated.notCalled ).to.equal( true );
+                    done();
+                }
+                response.redirect = sandbox.stub().callsFake( runTests );
+                sandbox.stub( sessionStore, 'get' ).returns( false );
 
-            it( 'the secure session is invalid' );
+                middleware = session.getRequireAuthMiddleware( loginPage );
+                middleware( request, response, runTests );
+            } );
+
+            it( 'the anonymous session is missing', function( done ) {
+                function runTests() {
+                    expect( sessionStore.get.notCalled ).to.equal( true );
+                    expect( response.redirect ).to.have.been.calledOnce();
+                    expect( response.redirect ).to.have.been.calledWith( loginPage );
+                    expect( request.session.isAuthenticated.notCalled ).to.equal( true );
+                    done();
+                }
+                request.cookies = {};
+                response.redirect = sandbox.stub().callsFake( runTests );
+                sandbox.stub( sessionStore, 'get' ).returns( false );
+
+                middleware = session.getRequireAuthMiddleware( loginPage );
+                middleware( request, response, runTests );
+            } );
+
+            it( 'the secure session is invalid', function( done ) {
+                function runTests() {
+                    expect( request.session.isAuthenticated ).to.have.been.calledOnce();
+                    expect( request.session.isAuthenticated ).to.have.been.calledWith( request );
+                    expect( request.session.isAuthenticated ).to.have.returned( authFailureResult );
+                    expect( sessionStore.get ).to.have.been.calledOnce();
+                    expect( sessionStore.get ).to.have.been.calledWith( secureTokenValue );
+                    expect( response.redirect ).to.have.been.calledOnce();
+                    expect( response.redirect ).to.have.been.calledWith( loginPage );
+                    done();
+                }
+                request.session = session.generateSessionObject();
+                sandbox.spy( request.session, 'isAuthenticated' );
+
+                request.cookies = { [ getSecureSessionName() ]: secureTokenValue };
+                response.redirect = sandbox.stub().callsFake( runTests );
+                sandbox.stub( sessionStore, 'get' ).returns( false );
+
+                middleware = session.getRequireAuthMiddleware( loginPage );
+                middleware( request, response, runTests );
+            } );
 
             it.skip( 'the secure session is missing', function() {
                 /*
@@ -229,9 +287,7 @@ describe.only( 'Glados includes a Session module that', function() {
                     done();
                 }
                 request.cookies = {};
-                response = {
-                    redirect: sinon.stub().callsFake( runTests )
-                };
+                response.redirect = sandbox.stub().callsFake( runTests );
 
                 middleware = session.getRequireAuthMiddleware( loginPage );
                 middleware( request, response, runTests );
