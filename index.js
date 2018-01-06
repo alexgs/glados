@@ -1,4 +1,5 @@
 import debugAgent from 'debug';
+import _ from 'lodash';
 import oauth2 from './lib/oauth2';
 import session from './lib/session';
 
@@ -8,13 +9,28 @@ const debug = debugAgent( 'glados:core' );
 // TODO >>> Create a `configure` function here that allows for DI but uses reasonable defaults, then configures the separate submodules
 function configure( options ) {
     if ( !_.has( options, 'expressApp' ) ) {
-        throw new error( messages.optionsMustHaveField( 'an "expressApp"' ) );
+        throw new Error( messages.optionsMustHaveField( 'an "expressApp"' ) );
     }
+
+    // Test `oauth` field and values
     if ( !_.has( options, 'oauth' ) ) {
-        throw new error( messages.optionsMustHaveField( 'an "oauth"' ) );
+        throw new Error( messages.optionsMustHaveField( 'an "oauth"' ) );
     }
+    if ( !_.has( options.oauth, 'callbackUrl' ) || ( !_.isString( options.oauth.callbackUrl ) ) ) {
+        throw new Error( messages.fieldMustHaveProperty( 'oauth', 'callbackUrl', 'string', options.oauth.callbackUrl ) );
+    }
+    if ( !_.has( options.oauth, 'clientId' ) || ( !_.isString( options.oauth.clientId ) ) ) {
+        throw new Error( messages.fieldMustHaveProperty( 'oauth', 'clientId', 'string', options.oauth.clientId ) );
+    }
+    if ( !_.has( options.oauth, 'clientSecret' ) || ( !_.isString( options.oauth.clientSecret ) ) ) {
+        throw new Error( messages.fieldMustHaveProperty( 'oauth', 'clientSecret', 'string', options.oauth.clientSecret ) );
+    }
+    if ( !_.has( options.oauth, 'domain' ) || ( !_.isString( options.oauth.domain ) ) ) {
+        throw new Error( messages.fieldMustHaveProperty( 'oauth', 'domain', 'string', options.oauth.domain ) );
+    }
+
     if ( !_.has( options, 'userStore' ) ) {
-        throw new error( messages.optionsMustHaveField( 'a "userStore"' ) );
+        throw new Error( messages.optionsMustHaveField( 'a "userStore"' ) );
     }
 
 
@@ -40,14 +56,23 @@ function getSessionMiddleware() {
 }
 
 export const messages = {
+    fieldMustHaveProperty: ( field, property, expectedType, actualValue ) => {
+        const actualType = typeof property;
+        const secondClause = !!actualType
+            ? `${property} has value ${actualValue} with type ${actualType}`
+            : `${property} is missing or empty`;
+        return `The \`${field}\` field (of the \`options\` argument to \`Glados.configure\`) must have a ${property}`
+            + ` of type "${expectedType}", but ` + secondClause;
+    },
     optionsMustHaveField: ( fieldWithArticle ) => {
         // The `fieldsWithArticle` should have double-quotes around the field name (e.g., 'an "awesome"')
-        `The \`options\` argument to \`Glados.configure\` must have ${fieldWithArticle} property.`
+        return `The \`options\` argument to \`Glados.configure\` must have ${fieldWithArticle} property.`;
     }
 };
 
 const glados = {
     completeOAuth2: oauth2.completeOAuth2,
+    configure,
     configureOAuth2: oauth2.configure,
     configureSessionStore: session.configureStore,
     generateSessionObject: session.generateSessionObject,
