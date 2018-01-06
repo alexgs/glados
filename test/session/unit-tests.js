@@ -22,7 +22,7 @@ chai.use( sinonChai );
 chai.use( chaiAsPromised );
 chai.use( dirtyChai );
 
-describe.only( 'Glados includes a Session module that', function() {
+describe( 'Glados includes a Session module that', function() {
     context( 'adds a `session` object to the the Express Request object, which', function() {
         it( 'can be accessed on the `request` object', function() {
             const sessionObject = session.generateSessionObject();

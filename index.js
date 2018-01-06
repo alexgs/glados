@@ -4,6 +4,22 @@ import session from './lib/session';
 
 const debug = debugAgent( 'glados:core' );
 
+
+// TODO >>> Create a `configure` function here that allows for DI but uses reasonable defaults, then configures the separate submodules
+function configure( options ) {
+    if ( !_.has( options, 'expressApp' ) ) {
+        throw new error( messages.optionsMustHaveField( 'an "expressApp"' ) );
+    }
+    if ( !_.has( options, 'oauth' ) ) {
+        throw new error( messages.optionsMustHaveField( 'an "oauth"' ) );
+    }
+    if ( !_.has( options, 'userStore' ) ) {
+        throw new error( messages.optionsMustHaveField( 'a "userStore"' ) );
+    }
+
+
+}
+
 function getCookieMiddleware() {
     // TODO >>> Copy the guts of the `cookie-parser` library here
     // TODO >>> Implement signing and encrypting cookies
@@ -23,7 +39,12 @@ function getSessionMiddleware() {
     }
 }
 
-// TODO >>> Create a `configure` function here that allows for DI but uses reasonable defaults, then configures the separate submodules
+export const messages = {
+    optionsMustHaveField: ( fieldWithArticle ) => {
+        // The `fieldsWithArticle` should have double-quotes around the field name (e.g., 'an "awesome"')
+        `The \`options\` argument to \`Glados.configure\` must have ${fieldWithArticle} property.`
+    }
+};
 
 const glados = {
     completeOAuth2: oauth2.completeOAuth2,
