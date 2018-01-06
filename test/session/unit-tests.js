@@ -113,7 +113,7 @@ describe.only( 'Glados includes a Session module that', function() {
                 sandbox.restore();
             } );
 
-            it( '(valid anonymous session): success', function( done ) {
+            it( 'valid anonymous session   --> success', function( done ) {
                 function runTests() {
                     expect( sessionStore.get ).to.have.been.calledOnce();
                     expect( sessionStore.get ).to.have.been.calledWith( anonTokenValue );
@@ -139,7 +139,7 @@ describe.only( 'Glados includes a Session module that', function() {
                 middleware( request, response, runTests );
             } );
 
-            it( '(invalid anonymous session): failure', function( done ) {
+            it( 'invalid anonymous session --> failure', function( done ) {
                 function runTests() {
                     expect( sessionStore.get ).to.have.been.calledOnce();
                     expect( sessionStore.get ).to.have.been.calledWith( anonTokenValue );
@@ -156,7 +156,7 @@ describe.only( 'Glados includes a Session module that', function() {
                 middleware( request, response, runTests );
             } );
 
-            it( '(missing anonymous session): failure', function( done ) {
+            it( 'missing anonymous session --> failure', function( done ) {
                 function runTests() {
                     expect( sessionStore.get.notCalled ).to.equal( true );
                     expect( response.redirect ).to.have.been.calledOnce();
@@ -173,7 +173,7 @@ describe.only( 'Glados includes a Session module that', function() {
                 middleware( request, response, runTests );
             } );
 
-            it( '(valid secure session): no change', function( done ) {
+            it( 'valid secure session      --> no change', function( done ) {
                 function runTests() {
                     expect( request.session.isAuthenticated ).to.be.calledOnce();
                     expect( request.session.isAuthenticated ).to.be.calledWith( request );
@@ -296,38 +296,43 @@ describe.only( 'Glados includes a Session module that', function() {
         } );
 
         context( 'can authenticate a user in a "secure session" according to the following rules:', function() {
-            const anonTokenValue = 'Help me, Obi-wan. You\'re my only hope';
             const loginPage = '/login';
             let middleware = null;
             let request = null;
             let response = null;
+            const sandbox = sinon.createSandbox();
             const secureTokenValue = 'Many years ago, you served my father in the clone wars.';
 
             beforeEach( function() {
+                // Start with a pristine sandbox
+                sandbox.restore();
+
                 middleware = null;
                 request = {
-                    cookies: { [ getAnonSessionName() ]: anonTokenValue },
-                    session: { isAuthenticated: sinon.stub().returns( authFailureResult ) }
+                    cookies: { [ getSecureSessionName() ]: secureTokenValue },
+                    session: session.generateSessionObject()
                 };
-                response = null;
+                response = {
+                    redirect: sinon.stub()
+                };
             } );
 
-            it.skip( 'calls `next` if the user is authenticated in a "secure session"', function( done ) {
-                // TODO *** >>> UPDATE <<< ***
+            after( function() {
+                sandbox.restore();
+            } );
+
+            it( 'valid secure session   --> success', function( done ) {
                 function runTests() {
-                    expect( request.session.isAuthenticated ).to.be.calledOnce();
-                    expect( request.session.isAuthenticated ).to.be.calledWith( request );
+                    expect( request.session.isAuthenticated ).to.have.been.calledOnce();
+                    expect( request.session.isAuthenticated ).to.have.been.calledWith( request );
+                    expect( request.session.isAuthenticated ).to.have.returned( authSuccessResult );
                     expect( response.redirect.notCalled ).to.equal( true );
                     done();
                 }
+                sandbox.stub( sessionStore, 'get' ).returns( true );
+                sandbox.spy( request.session, 'isAuthenticated' );
 
-                const loginPage = '/login';
-                const secureTokenValue = 'Many years ago, you served my father in the clone wars.';
-                const request = {
-                    cookies: { [ getSecureSessionName() ]: secureTokenValue },
-                    session: { isAuthenticated: sinon.stub().returns( authSuccessResult ) }
-                };
-                const response = {
+                response = {
                     redirect: sinon.stub().callsFake( runTests )
                 };
 
@@ -335,26 +340,47 @@ describe.only( 'Glados includes a Session module that', function() {
                 middleware( request, response, runTests );
             } );
 
-            it.skip( 'does not authenticate the user', function( done ) {
-                // TODO *** >>> UPDATE <<< ***
+            it( 'invalid secure session --> failure', function( done ) {
                 function runTests() {
                     expect( request.session.isAuthenticated ).to.have.been.calledOnce();
                     expect( request.session.isAuthenticated ).to.have.been.calledWith( request );
+                    expect( request.session.isAuthenticated ).to.have.returned( authFailureResult );
                     expect( response.redirect ).to.have.been.calledOnce();
                     expect( response.redirect ).to.have.been.calledWith( loginPage );
+                    expect( sessionStore.get ).to.have.been.calledOnce();
+                    expect( sessionStore.get ).to.have.been.calledWith( secureTokenValue );
                     done();
                 }
-                request.cookies = { [ getSecureSessionName() ]: secureTokenValue };
+                sandbox.stub( sessionStore, 'get' ).returns( false );
+                sandbox.spy( request.session, 'isAuthenticated' );
                 response = {
-                    redirect: sinon.stub().callsFake( runTests )
+                    redirect: sandbox.stub().callsFake( runTests )
                 };
 
                 middleware = session.getRequireAuthMiddleware( loginPage );
                 middleware( request, response, runTests );
             } );
 
-        } );
+            it( 'missing secure session --> failure', function( done ) {
+                // For this case, both the anonymous session and the secure session are missing
+                function runTests() {
+                    expect( request.session.isAuthenticated.notCalled ).to.equal( true );
+                    expect( response.redirect ).to.have.been.calledOnce();
+                    expect( response.redirect ).to.have.been.calledWith( loginPage );
+                    expect( sessionStore.get.notCalled ).to.equal( true );
+                    done();
+                }
+                sandbox.stub( sessionStore, 'get' ).returns( false );
+                sandbox.spy( request.session, 'isAuthenticated' );
+                request.cookies = {};
+                response = {
+                    redirect: sandbox.stub().callsFake( runTests )
+                };
 
+                middleware = session.getRequireAuthMiddleware( loginPage );
+                middleware( request, response, runTests );
+            } );
+        } );
     } );
 
     context( 'has a `getSessionKey` function, which', function() {
