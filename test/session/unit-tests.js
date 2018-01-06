@@ -14,7 +14,7 @@ const debug = debugAgent( 'glados:unit-test' );
 chai.use( sinonChai );
 chai.use( dirtyChai );
 
-describe( 'Glados includes a Session module that', function() {
+describe.only( 'Glados includes a Session module that', function() {
     context( 'adds a `session` object to the the Express Request object, which', function() {
         it( 'can be accessed on the `request` object', function() {
             const sessionObject = session.generateSessionObject();
@@ -188,7 +188,7 @@ describe( 'Glados includes a Session module that', function() {
             } );
         } );
 
-        context( 'redirects to a login page if the session', function() {
+        context( 'redirects to a login page if', function() {
             const anonTokenValue = 'Help me, Obi-wan. You\'re my only hope';
             const loginPage = '/login';
             let middleware = null;
@@ -205,7 +205,24 @@ describe( 'Glados includes a Session module that', function() {
                 response = null;
             } );
 
-            it( 'is missing', function( done ) {
+            it( 'the anonymous session is invalid' );
+
+            it( 'the anonymous session is missing' );
+
+            it( 'the secure session is invalid' );
+
+            it.skip( 'the secure session is missing', function() {
+                /*
+                    There is currently no way to test this. The request must have a valid secure session to exit from
+                    `upgradeAnonSession` without an error. At this point, the request definitely contains a secure
+                    session cookie. Somehow, the secure session cookie would have to be deleted from `request.cookies`
+                    **before** `isAuthenticated` is invoked.
+
+                    With the current control flow, there is no way to do this.
+                 */
+            } );
+
+            it( 'there is no session whatsoever', function( done ) {
                 function runTests() {
                     expect( response.redirect ).to.have.been.calledOnce();
                     expect( response.redirect ).to.have.been.calledWith( loginPage );
@@ -220,7 +237,50 @@ describe( 'Glados includes a Session module that', function() {
                 middleware( request, response, runTests );
             } );
 
-            it( 'does not authenticate the user', function( done ) {
+        } );
+
+        context( 'can authenticate a user in a "secure session" according to the following rules:', function() {
+            const anonTokenValue = 'Help me, Obi-wan. You\'re my only hope';
+            const loginPage = '/login';
+            let middleware = null;
+            let request = null;
+            let response = null;
+            const secureTokenValue = 'Many years ago, you served my father in the clone wars.';
+
+            beforeEach( function() {
+                middleware = null;
+                request = {
+                    cookies: { [ getAnonSessionName() ]: anonTokenValue },
+                    session: { isAuthenticated: sinon.stub().returns( authFailureResult ) }
+                };
+                response = null;
+            } );
+
+            it.skip( 'calls `next` if the user is authenticated in a "secure session"', function( done ) {
+                // TODO *** >>> UPDATE <<< ***
+                function runTests() {
+                    expect( request.session.isAuthenticated ).to.be.calledOnce();
+                    expect( request.session.isAuthenticated ).to.be.calledWith( request );
+                    expect( response.redirect.notCalled ).to.equal( true );
+                    done();
+                }
+
+                const loginPage = '/login';
+                const secureTokenValue = 'Many years ago, you served my father in the clone wars.';
+                const request = {
+                    cookies: { [ getSecureSessionName() ]: secureTokenValue },
+                    session: { isAuthenticated: sinon.stub().returns( authSuccessResult ) }
+                };
+                const response = {
+                    redirect: sinon.stub().callsFake( runTests )
+                };
+
+                const middleware = session.getRequireAuthMiddleware( loginPage );
+                middleware( request, response, runTests );
+            } );
+
+            it.skip( 'does not authenticate the user', function( done ) {
+                // TODO *** >>> UPDATE <<< ***
                 function runTests() {
                     expect( request.session.isAuthenticated ).to.have.been.calledOnce();
                     expect( request.session.isAuthenticated ).to.have.been.calledWith( request );
@@ -236,28 +296,7 @@ describe( 'Glados includes a Session module that', function() {
                 middleware = session.getRequireAuthMiddleware( loginPage );
                 middleware( request, response, runTests );
             } );
-        } );
 
-        it( 'calls `next` if the user is authenticated in a "secure session"', function( done ) {
-            function runTests() {
-                expect( request.session.isAuthenticated ).to.be.calledOnce();
-                expect( request.session.isAuthenticated ).to.be.calledWith( request );
-                expect( response.redirect.notCalled ).to.equal( true );
-                done();
-            }
-
-            const loginPage = '/login';
-            const secureTokenValue = 'Many years ago, you served my father in the clone wars.';
-            const request = {
-                cookies: { [ getSecureSessionName() ]: secureTokenValue },
-                session: { isAuthenticated: sinon.stub().returns( authSuccessResult ) }
-            };
-            const response = {
-                redirect: sinon.stub().callsFake( runTests )
-            };
-
-            const middleware = session.getRequireAuthMiddleware( loginPage );
-            middleware( request, response, runTests );
         } );
 
     } );
