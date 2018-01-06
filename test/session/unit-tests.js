@@ -4,8 +4,9 @@ import dirtyChai from 'dirty-chai';
 import _ from 'lodash';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { ERROR_SOURCE } from '../../lib/constants';
+import { ERROR_SOURCE, SESSION_DOCUMENT } from '../../lib/constants';
 import sessionStore from '../../lib/session-store';
+import userStore from '../../lib/user-store';
 
 import session, { getAnonSessionName, getSecureSessionName } from '../../lib/session';
 
@@ -188,6 +189,93 @@ describe.only( 'Glados includes a Session module that', function() {
             } );
         } );
 
+        it( '(if successfully upgrading an "anonymous session") stores customized user data in the Session Store', function( done ) {
+            // Initialize a first round of variables
+            const jwtToken = {
+                email: 'slim@pickens.com',
+                iss: 'https://blazing.saddl.es',
+                aud: 'Mel Brooks',
+                sub: 'auth0|123abc456def7890'
+            };
+            const sandbox = sinon.createSandbox();
+            const sessionId = 'What in the Wide Wide World of Sports';
+            const userId = 'strangelove';
+
+            // Initialize a second round of variables
+            const anonSession = getAnonSessionName();
+            const anonSessionDocument = {
+                jwtToken,
+                type: SESSION_DOCUMENT.TYPE.ANONYMOUS
+            };
+            const fakeUserRecord = {
+                email: jwtToken.email,
+                providers: [ jwtToken.sub ],
+                id: userId
+            };
+            const loginPage = '/login';
+            const request = {
+                cookies: { [ anonSession ]: sessionId },
+                session: session.generateSessionObject()
+            };
+            const response = {
+                clearCookie: sandbox.stub(),
+                cookie: sandbox.stub()
+            };
+            const secureSession = getSecureSessionName();
+            const secureSessionDocument = {
+                email: jwtToken.email,
+                id: sessionId,
+                providers: [ jwtToken.sub ],
+                type: SESSION_DOCUMENT.TYPE.SECURE,
+                userId
+            };
+
+            // Store the anonymous session
+            sessionStore.upsert( sessionId, anonSessionDocument );
+
+            // Setup spies and stubs
+            sandbox.spy( sessionStore, 'delete' );
+            // sandbox.stub( sessionStore, 'get' ).returns( anonSessionDocument );
+            sandbox.spy( sessionStore, 'get' );
+            sandbox.spy( sessionStore, 'upsert' );
+            sandbox.stub( userStore, 'getOrCreate' ).returns( fakeUserRecord );
+
+            function runTests() {
+                // Test spies and stubs
+                // expect( sessionStore.get ).to.have.been.calledTwice();
+                expect( sessionStore.get.callCount ).to.be.at.least( 1 );
+                expect( sessionStore.get.callCount ).to.be.at.most( 2 );
+                expect( sessionStore.get ).to.have.been.calledWith( sessionId );
+                expect( sessionStore.get ).to.have.returned( anonSessionDocument );
+                expect( sessionStore.delete ).to.have.been.calledOnce();
+                expect( sessionStore.delete ).to.have.been.calledWith( sessionId );
+                expect( userStore.getOrCreate ).to.have.been.calledOnce();
+                expect( userStore.getOrCreate ).to.have.been.calledWith( {
+                    email: jwtToken.email,
+                    providerId: jwtToken.sub
+                } );
+                expect( userStore.getOrCreate ).to.have.returned( fakeUserRecord );
+                expect( sessionStore.upsert ).to.have.been.calledOnce();
+                expect( sessionStore.upsert ).to.have.been.calledWith( sessionId, secureSessionDocument );
+
+                // Test cookies
+                expect( _.has( request.cookies, anonSession ) ).to.equal( false );
+                expect( _.has( request.cookies, secureSession ) ).to.equal( true );
+
+                // Test session
+                const actualSessionDoc = sessionStore.get( sessionId );
+                expect( actualSessionDoc ).to.be.ok();
+                expect( _.has( actualSessionDoc, 'type' ) ).to.equal( true );
+                expect( actualSessionDoc.type ).to.equal( SESSION_DOCUMENT.TYPE.SECURE );
+
+                sandbox.restore();
+                done();
+            }
+
+            const middleware = session.getRequireAuthMiddleware( loginPage );
+            middleware( request, response, runTests );
+        } );
+
         context( 'redirects to a login page if', function() {
             const anonTokenValue = 'Help me, Obi-wan. You\'re my only hope';
             const loginPage = '/login';
@@ -270,14 +358,12 @@ describe.only( 'Glados includes a Session module that', function() {
             } );
 
             it.skip( 'the secure session is missing', function() {
-                /*
-                    There is currently no way to test this. The request must have a valid secure session to exit from
-                    `upgradeAnonSession` without an error. At this point, the request definitely contains a secure
-                    session cookie. Somehow, the secure session cookie would have to be deleted from `request.cookies`
-                    **before** `isAuthenticated` is invoked.
-
-                    With the current control flow, there is no way to do this.
-                 */
+                // There is currently no way to test this. The request must have a valid secure session to exit from
+                // `upgradeAnonSession` without an error. At this point, the request definitely contains a secure
+                // session cookie. Somehow, the secure session cookie would have to be deleted from `request.cookies`
+                // **before** `isAuthenticated` is invoked.
+                //
+                // With the current control flow, there is no way to do this.
             } );
 
             it( 'there is no session whatsoever', function( done ) {
@@ -390,19 +476,23 @@ describe.only( 'Glados includes a Session module that', function() {
     } );
 
     context( 'has a `storeJwtToken` function, which', function() {
-        it( 'stores the session ID and token in the session store', function( done ) {
+        it( 'stores the session ID and JWT token in the session store', function( done ) {
             const sessionId = 'What in the Wide Wide World of Sports';
             const jwtIdToken = {
                 email: 'slim@pickens.com',
                 iss: 'https://blazing.saddl.es',
                 aud: 'Mel Brooks'
             };
+            const storeDocument = {
+                jwtToken: jwtIdToken,
+                type: 'anonymous'
+            };
             const storeStub = sinon.stub( sessionStore, 'upsert' );
 
             session.storeJwtToken( sessionId, jwtIdToken )
                 .then( () => {
                     expect( storeStub ).to.have.been.calledOnce();
-                    expect( storeStub ).to.have.been.calledWith( sessionId, jwtIdToken );
+                    expect( storeStub ).to.have.been.calledWith( sessionId, storeDocument );
                     storeStub.restore();
                     done();
                 } );
