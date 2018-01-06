@@ -5,7 +5,8 @@ import session from './lib/session';
 const debug = debugAgent( 'glados:core' );
 
 function getCookieMiddleware() {
-    // TODO Copy the guts of the `cookie-parser` library here
+    // TODO >>> Copy the guts of the `cookie-parser` library here
+    // TODO >>> Implement signing and encrypting cookies
 }
 
 function getSessionMiddleware() {
