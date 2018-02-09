@@ -28,6 +28,8 @@ const debug = debugAgent( 'glados:core' );
 
 // TODO >>> Create a `configure` function here that allows for DI but uses reasonable defaults, then configures the separate submodules
 function configure( options:GladosOptions ) {
+    oauth2.configure( options.oauth, options.expressApp );
+    session.configureStore( options.expressApp.locals );
 }
 
 function getCookieMiddleware() {
@@ -49,26 +51,9 @@ function getSessionMiddleware() {
     }
 }
 
-export const messages = {
-    fieldMustHaveProperty: ( field:string, property:string, expectedType:string, actualValue:any ) => {
-        const actualType = typeof property;
-        const secondClause = !!actualType
-            ? `${property} has value ${actualValue} with type ${actualType}`
-            : `${property} is missing or empty`;
-        return `The \`${field}\` field (of the \`options\` argument to \`Glados.configure\`) must have a ${property}`
-            + ` of type "${expectedType}", but ` + secondClause;
-    },
-    optionsMustHaveField: ( fieldWithArticle:string ) => {
-        // The `fieldsWithArticle` should have double-quotes around the field name (e.g., 'an "awesome"')
-        return `The \`options\` argument to \`Glados.configure\` must have ${fieldWithArticle} property.`;
-    }
-};
-
 const glados = {
     completeOAuth2: oauth2.completeOAuth2,
     configure,
-    configureOAuth2: oauth2.configure,
-    configureSessionStore: session.configureStore,
     generateSessionObject: session.generateSessionObject,
     getCookieMiddleware,
     getDummyHandler: oauth2.getDummyHandler,
