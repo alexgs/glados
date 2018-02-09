@@ -1,4 +1,3 @@
-// @flow
 import chai, { expect } from 'chai';
 import dirtyChai from 'dirty-chai';
 import _ from 'lodash';
@@ -39,42 +38,6 @@ describe.only( 'Glados includes an OAuth2 module that', function() {
             };
         } );
 
-        it.skip( 'throws an error if the `app` argument is missing a `locals` field', function() {
-            expect( function() {
-                oauth2.configure( options, {} );
-            } ).to.throw( Error, utils.messagesFactory.appIsNotValid() );
-        } );
-
-        context.skip( 'throws an error if the `options` argument is missing a required field:', function() {
-            it( 'the `callbackUrl` field must be a string', function() {
-                delete options.callbackUrl;
-                expect( function() {
-                    oauth2.configure( options, app );
-                } ).to.throw( Error, utils.messagesFactory.optionsObjectNotCorrect() );
-            } );
-
-            it( 'the `clientId` field must be a string', function() {
-                delete options.clientId;
-                expect( function() {
-                    oauth2.configure( options, app );
-                } ).to.throw( Error, utils.messagesFactory.optionsObjectNotCorrect() );
-            } );
-
-            it( 'the `clientSecret` field must be a string', function() {
-                delete options.clientSecret;
-                expect( function() {
-                    oauth2.configure( options, app );
-                } ).to.throw( Error, utils.messagesFactory.optionsObjectNotCorrect() );
-            } );
-
-            it( 'the `domain` field must be a string', function() {
-                delete options.domain;
-                expect( function() {
-                    oauth2.configure( options, app );
-                } ).to.throw( Error, utils.messagesFactory.optionsObjectNotCorrect() );
-            } );
-        } );
-
         it( 'throws an error if called more than once', function() {
             expect( function() {
                 oauth2.configure( options, app );
@@ -83,7 +46,7 @@ describe.only( 'Glados includes an OAuth2 module that', function() {
 
         } );
 
-        it.skip( 'initializes a CSRF token store', function() {
+        it( 'initializes a CSRF token store', function() {
             const spy = sinon.spy( csrfStore, 'initialize' );
             oauth2.configure( options, app );
             expect( spy ).to.have.been.calledOnce();
@@ -107,7 +70,7 @@ describe.only( 'Glados includes an OAuth2 module that', function() {
             oauth2.configure( gladosOptions, expressApp );
         } );
 
-        it.skip( 'throws an error if the module is not configured', function() {
+        it( 'throws an error if the module is not configured', function() {
             utils._reset();
             const routeMiddleware = oauth2.startOAuth2();
             expect( function() {
@@ -289,8 +252,6 @@ describe.only( 'Glados includes an OAuth2 module that', function() {
                 } ).to.throw( Error, utils.messagesFactory.moduleNotInitialized( 'completeOAuth2' ) );
                 resetAll( () => { /* do nothing */ } );
             } );
-
-            it( 'the request object does not have the required fields' );
         } );
 
         it( 'redirects to the website root if the CSRF check fails', function( done ) {
