@@ -11,6 +11,9 @@ function configure( options ) {
     if ( !_.has( options, 'expressApp' ) ) {
         throw new Error( messages.optionsMustHaveField( 'an "expressApp"' ) );
     }
+    if ( !_.has( options.expressApp, 'locals' ) || !_.isPlainObject( options.expressApp.locals ) ) {
+        throw new Error( messages.fieldMustHaveProperty( 'expressApp', 'locals', 'Plain Object', options.expressApp.locals ) );
+    }
 
     // Test `oauth` field and values
     if ( !_.has( options, 'oauth' ) ) {

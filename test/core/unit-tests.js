@@ -46,7 +46,22 @@ describe.only( 'The Glados core has a `configure` function that', function() {
         } );
 
         context( 'if the `expressApp` value', function() {
-            it( 'does not have a `locals` property that is a plain object' );
+            it( 'does not have a `locals` property that is a plain object', function() {
+                const badOptions = _.cloneDeep( goodOptions );
+                delete badOptions.expressApp.locals;
+                expect( function() {
+                    glados.configure( badOptions );
+                } ).to.throw(
+                    Error, messages.fieldMustHaveProperty( 'expressApp', 'locals', 'Plain Object', badOptions.expressApp.locals )
+                );
+
+                badOptions.expressApp.locals = 'some local value';
+                expect( function() {
+                    glados.configure( badOptions );
+                } ).to.throw(
+                    Error, messages.fieldMustHaveProperty( 'expressApp', 'locals', 'Plain Object', badOptions.expressApp.locals )
+                );
+            } );
         } );
 
         context( 'if the `oauth` value', function() {
