@@ -5,7 +5,11 @@ import oauth2 from './lib/oauth2';
 import session from './lib/session';
 import type { UserData, UserDef } from './lib/user-store';
 // noinspection NpmUsedModulesInstalled
-import type { Request, Response, NextFunction } from 'express';
+import type { $Request, $Response, NextFunction } from 'express';
+
+type GladosRequest = $Request & {
+    session:any
+};
 
 type OptionsObject = {
     expressApp: {
@@ -64,7 +68,7 @@ function getCookieMiddleware() {
 }
 
 function getSessionMiddleware() {
-    return function( request:Request, response:Response, next:NextFunction ) {
+    return function( request:GladosRequest, response:$Response, next:NextFunction ) {
         if ( request.session ) {
             // The session object **DOES NOT** persist between requests. This never gets called; it's just here to
             // document this behavior
