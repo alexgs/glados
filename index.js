@@ -1,17 +1,15 @@
 // @flow
 import debugAgent from 'debug';
-import _ from 'lodash';
 import oauth2 from './lib/oauth2';
 import session from './lib/session';
-import type { UserData, UserDef } from './lib/user-store';
+import type { UserLookupData, GladosUser } from './lib/user-store';
 // noinspection NpmUsedModulesInstalled
 import type { $Request, $Response, NextFunction } from 'express';
 
 type GladosRequest = $Request & {
     session:any
 };
-
-type OptionsObject = {
+type GladosOptions = {
     expressApp: {
         locals: {}
     },
@@ -22,44 +20,14 @@ type OptionsObject = {
         domain:string
     },
     userStore: {
-        getOrCreate: ( userData:UserData ) => UserDef
+        getOrCreate: ( userData:UserLookupData ) => GladosUser
     }
 };
 
 const debug = debugAgent( 'glados:core' );
 
-
 // TODO >>> Create a `configure` function here that allows for DI but uses reasonable defaults, then configures the separate submodules
-function configure( options:OptionsObject ) {
-    if ( !_.has( options, 'expressApp' ) ) {
-        throw new Error( messages.optionsMustHaveField( 'an "expressApp"' ) );
-    }
-    if ( !_.has( options.expressApp, 'locals' ) || !_.isPlainObject( options.expressApp.locals ) ) {
-        throw new Error( messages.fieldMustHaveProperty( 'expressApp', 'locals', 'Plain Object', options.expressApp.locals ) );
-    }
-
-    // Test `oauth` field and values
-    if ( !_.has( options, 'oauth' ) ) {
-        throw new Error( messages.optionsMustHaveField( 'an "oauth"' ) );
-    }
-    if ( !_.has( options.oauth, 'callbackUrl' ) || ( !_.isString( options.oauth.callbackUrl ) ) ) {
-        throw new Error( messages.fieldMustHaveProperty( 'oauth', 'callbackUrl', 'string', options.oauth.callbackUrl ) );
-    }
-    if ( !_.has( options.oauth, 'clientId' ) || ( !_.isString( options.oauth.clientId ) ) ) {
-        throw new Error( messages.fieldMustHaveProperty( 'oauth', 'clientId', 'string', options.oauth.clientId ) );
-    }
-    if ( !_.has( options.oauth, 'clientSecret' ) || ( !_.isString( options.oauth.clientSecret ) ) ) {
-        throw new Error( messages.fieldMustHaveProperty( 'oauth', 'clientSecret', 'string', options.oauth.clientSecret ) );
-    }
-    if ( !_.has( options.oauth, 'domain' ) || ( !_.isString( options.oauth.domain ) ) ) {
-        throw new Error( messages.fieldMustHaveProperty( 'oauth', 'domain', 'string', options.oauth.domain ) );
-    }
-
-    if ( !_.has( options, 'userStore' ) ) {
-        throw new Error( messages.optionsMustHaveField( 'a "userStore"' ) );
-    }
-
-
+function configure( options:GladosOptions ) {
 }
 
 function getCookieMiddleware() {
@@ -111,3 +79,4 @@ const glados = {
 };
 
 export default glados;
+export type { GladosOptions, GladosRequest };
