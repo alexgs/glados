@@ -6,6 +6,8 @@ import glados, { messages } from '../../index';
 
 chai.use( dirtyChai );
 
+// TODO --> Does Flow give errors when we're passing invalid objects to the `configure` function? Because that would be awesome! <--
+
 describe.only( 'The Glados core has a `configure` function that', function() {
     context( 'throws an error', function() {
         const goodOptions = {

@@ -1,13 +1,32 @@
+// @flow
 import debugAgent from 'debug';
 import _ from 'lodash';
 import oauth2 from './lib/oauth2';
 import session from './lib/session';
+import type { UserData, UserDef } from './lib/user-store';
+// noinspection NpmUsedModulesInstalled
+import type { Request, Response, NextFunction } from 'express';
+
+type OptionsObject = {
+    expressApp: {
+        locals: {}
+    },
+    oauth: {
+        callbackUrl:string,
+        clientId:string,
+        clientSecret:string,
+        domain:string
+    },
+    userStore: {
+        getOrCreate: ( userData:UserData ) => UserDef
+    }
+};
 
 const debug = debugAgent( 'glados:core' );
 
 
 // TODO >>> Create a `configure` function here that allows for DI but uses reasonable defaults, then configures the separate submodules
-function configure( options ) {
+function configure( options:OptionsObject ) {
     if ( !_.has( options, 'expressApp' ) ) {
         throw new Error( messages.optionsMustHaveField( 'an "expressApp"' ) );
     }
@@ -45,7 +64,7 @@ function getCookieMiddleware() {
 }
 
 function getSessionMiddleware() {
-    return function( request, response, next ) {
+    return function( request:Request, response:Response, next:NextFunction ) {
         if ( request.session ) {
             // The session object **DOES NOT** persist between requests. This never gets called; it's just here to
             // document this behavior
@@ -59,7 +78,7 @@ function getSessionMiddleware() {
 }
 
 export const messages = {
-    fieldMustHaveProperty: ( field, property, expectedType, actualValue ) => {
+    fieldMustHaveProperty: ( field:string, property:string, expectedType:string, actualValue:any ) => {
         const actualType = typeof property;
         const secondClause = !!actualType
             ? `${property} has value ${actualValue} with type ${actualType}`
@@ -67,7 +86,7 @@ export const messages = {
         return `The \`${field}\` field (of the \`options\` argument to \`Glados.configure\`) must have a ${property}`
             + ` of type "${expectedType}", but ` + secondClause;
     },
-    optionsMustHaveField: ( fieldWithArticle ) => {
+    optionsMustHaveField: ( fieldWithArticle:string ) => {
         // The `fieldsWithArticle` should have double-quotes around the field name (e.g., 'an "awesome"')
         return `The \`options\` argument to \`Glados.configure\` must have ${fieldWithArticle} property.`;
     }
