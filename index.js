@@ -4,21 +4,15 @@ import oauth2 from './lib/oauth2';
 import session from './lib/session';
 import type { UserLookupData, GladosUser } from './lib/user-store';
 // noinspection NpmUsedModulesInstalled
-import type { $Request, $Response, NextFunction } from 'express';
+import type { $Application, $Request, $Response, NextFunction } from 'express';
+import type { GladosOAuthOptions } from './lib/oauth2';
 
 type GladosRequest = $Request & {
     session:any
 };
 type GladosOptions = {
-    expressApp: {
-        locals: {}
-    },
-    oauth: {
-        callbackUrl:string,
-        clientId:string,
-        clientSecret:string,
-        domain:string
-    },
+    expressApp: $Application,
+    oauth: GladosOAuthOptions,
     userStore: {
         getOrCreate: ( userData:UserLookupData ) => GladosUser
     }
