@@ -3,15 +3,17 @@ import debugAgent from 'debug';
 import oauth2 from './lib/oauth2';
 import session from './lib/session';
 import type { UserLookupData, GladosUser } from './lib/user-store';
-// noinspection NpmUsedModulesInstalled
 import type { $Application, $Request, $Response, NextFunction } from 'express';
 import type { GladosOAuthOptions } from './lib/oauth2';
 
+type GladosContext = {
+    locals: { [name: string]: mixed }
+}
 type GladosRequest = $Request & {
-    session:any
+    session:mixed       // Replace with Session Object
 };
 type GladosOptions = {
-    expressApp: $Application,
+    expressApp: GladosContext,
     oauth: GladosOAuthOptions,
     userStore: {
         getOrCreate: ( userData:UserLookupData ) => GladosUser
@@ -58,4 +60,4 @@ const glados = {
 };
 
 export default glados;
-export type { GladosOptions, GladosRequest };
+export type { GladosContext, GladosOptions, GladosRequest };
