@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import debugAgent from 'debug';
 import dirtyChai from 'dirty-chai';
 import _ from 'lodash';
+import ms from 'ms';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { ERROR_SOURCE, SESSION_DOCUMENT } from '../../lib/constants';
@@ -539,8 +540,16 @@ describe( 'Glados includes a Session module that', function() {
         let sessionId = null;
 
         beforeEach( function() {
+            const now = Date.now();
             sessionId = 'a-really-unique-session-id-1-2-3';
-            jwtToken = 'thats-the-combination-to-my-luggage';
+            jwtToken = {
+                aud: 'Scroob',
+                exp: now + ms( '1d' ),
+                email: 'scroob@spaceballs.com',
+                email_verified: true,
+                iat: now,
+                iss:'Planet Spaceball'
+            };
             cookieStub = sinon.stub();
 
             request = {
@@ -554,10 +563,10 @@ describe( 'Glados includes a Session module that', function() {
         } );
 
         context( 'returns a Promise that', function() {
-            it( '(if the cookie is sent from the client) resolves with the session ID and JWT token', function( done ) {
+            it( '(if an anonymous session cookie is sent from the client) resolves with the session ID and JWT token', function( done ) {
                 session.handleAnonymousSession( request, response, jwtToken )
                     .then( ( result ) => {
-                        expect( result.jwtToken ).to.equal( jwtToken );
+                        expect( result.jwtToken ).to.deep.equal( jwtToken );
                         expect( result.sessionId ).to.equal( request.cookies[ getAnonSessionName() ] );
                         done();
                     } );
@@ -578,7 +587,8 @@ describe( 'Glados includes a Session module that', function() {
                         .then( result => {
                             expect( cookieStub ).to.have.been.calledOnce();
                             done();
-                        } );
+                        } )
+                        .catch( error => done( error ) );
                 } );
 
                 it( 'resolves with the session ID and JWT token', function( done ) {
