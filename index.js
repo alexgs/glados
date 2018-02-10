@@ -40,7 +40,7 @@ function getSessionMiddleware() {
             // document this behavior
             debug( 'Existing session: %O', request.session );
         } else {
-            debug( 'Generating new session' );
+            debug( 'Generating session object' );
             request.session = session.generateSessionObject();
         }
         next();

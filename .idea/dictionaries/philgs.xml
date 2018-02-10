@@ -2,6 +2,7 @@
   <dictionary name="philgs">
     <words>
       <w>superagent</w>
+      <w>upsert</w>
     </words>
   </dictionary>
 </component>
