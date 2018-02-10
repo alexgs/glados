@@ -18,7 +18,7 @@ describe( 'Glados includes a CRSF Token Store module that', function() {
         resetStore();
     } );
 
-    context( '(working with "Chai as Promised")', function() {
+    context.skip( '(working with "Chai as Promised")', function() {
         it( 'passes one canary test', function() {
             return expect( Promise.resolve( 2 + 2 ) ).to.eventually.equal( 4 );
         } );

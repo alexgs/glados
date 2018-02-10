@@ -85,7 +85,7 @@ describe.only( 'Glados includes an OAuth2 module that', function() {
         } );
 
         it( 'uses the Session module to set an anonymous session cookie', function( done ) {
-            const stub = sinon.stub( session, 'setAnonymousSession' )
+            const stub = sinon.stub( session, 'handleAnonymousSession' )
                 .callsFake( () => Promise.resolve( {
                     sessionId: 'fake-session-id',
                     jwtToken: 'fake-id-token'
@@ -179,7 +179,7 @@ describe.only( 'Glados includes an OAuth2 module that', function() {
     } );
 
     context( 'has a `completeOAuth2` function that returns a middleware function, which', function() {
-        let anonIdStub = null;          // stub session.setAnonymousSession
+        let anonIdStub = null;          // stub session.handleAnonymousSession
         let expressApp = {
             locals: { }
         };
@@ -211,7 +211,7 @@ describe.only( 'Glados includes an OAuth2 module that', function() {
             utils._reset();
             oauth2.configure( gladosOptions, expressApp );
 
-            anonIdStub = sinon.stub( session, 'setAnonymousSession' )
+            anonIdStub = sinon.stub( session, 'handleAnonymousSession' )
                 .callsFake( ({ sessionId, jwtToken }) => Promise.resolve( { sessionId, jwtToken } ) );
             fakeResponse = {
                 ok: true,

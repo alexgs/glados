@@ -3,7 +3,7 @@ import debugAgent from 'debug';
 import oauth2 from './lib/oauth2';
 import session from './lib/session';
 import type { UserLookupData, GladosUser } from './lib/user-store';
-import type { $Application, $Request, $Response, NextFunction } from 'express';
+import type { $Request, $Response, NextFunction } from 'express';
 import type { GladosOAuthOptions } from './lib/oauth2';
 
 type GladosContext = {
@@ -25,7 +25,7 @@ const debug = debugAgent( 'glados:core' );
 // TODO >>> Create a `configure` function here that allows for DI but uses reasonable defaults, then configures the separate submodules
 function configure( options:GladosOptions ) {
     oauth2.configure( options.oauth, options.expressApp );
-    session.configureStore( options.expressApp.locals );
+    session.configureStore( options.expressApp );
 }
 
 function getCookieMiddleware() {

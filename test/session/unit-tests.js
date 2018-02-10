@@ -531,7 +531,7 @@ describe( 'Glados includes a Session module that', function() {
         } );
     } );
 
-    context( 'has a `setAnonymousSession` function, which', function() {
+    context( 'has a `handleAnonymousSession` function, which', function() {
         let cookieStub = null;
         let jwtToken = null;
         let request = null;
@@ -555,7 +555,7 @@ describe( 'Glados includes a Session module that', function() {
 
         context( 'returns a Promise that', function() {
             it( '(if the cookie is sent from the client) resolves with the session ID and JWT token', function( done ) {
-                session.setAnonymousSession( request, response, jwtToken )
+                session.handleAnonymousSession( request, response, jwtToken )
                     .then( ( result ) => {
                         expect( result.jwtToken ).to.equal( jwtToken );
                         expect( result.sessionId ).to.equal( request.cookies[ getAnonSessionName() ] );
@@ -574,7 +574,7 @@ describe( 'Glados includes a Session module that', function() {
                         cookie: cookieStub
                     };
 
-                    session.setAnonymousSession( request, response, jwtToken )
+                    session.handleAnonymousSession( request, response, jwtToken )
                         .then( result => {
                             expect( cookieStub ).to.have.been.calledOnce();
                             done();
@@ -594,7 +594,7 @@ describe( 'Glados includes a Session module that', function() {
                         cookie: cookieStub
                     };
 
-                    session.setAnonymousSession( request, response, jwtToken )
+                    session.handleAnonymousSession( request, response, jwtToken )
                         .then( ( result ) => {
                             expect( result.jwtToken ).to.equal( jwtToken );
                             expect( result.sessionId ).to.equal( sessionId );
@@ -606,7 +606,7 @@ describe( 'Glados includes a Session module that', function() {
 
         it( 'accepts an undefined JWT token', function( done ) {
             expect( function() {
-                session.setAnonymousSession( request, response, undefined )
+                session.handleAnonymousSession( request, response, undefined )
                     .then( () => {
                         done();
                     } );
