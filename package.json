@@ -5,8 +5,26 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha **/unit-tests.js",
+    "flow": "flow",
     "test:debug": "DEBUG=glados:* mocha **/unit-tests.js",
     "test:integration": "mocha **/integration-tests.js"
+  },
+  "babel": {
+    "presets": [
+      [
+        "env",
+        {
+          "targets": {
+            "node": "current"
+          }
+        }
+      ],
+      "flow",
+      "stage-3"
+    ],
+    "plugins": [
+      "transform-class-properties"
+    ]
   },
   "repository": {
     "type": "git",
@@ -23,7 +41,9 @@
     "@types/chai": "^4.0.10",
     "@types/mocha": "^2.2.45",
     "babel-cli": "^6.26.0",
-    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.0",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-flow": "^6.23.0",
     "babel-preset-stage-3": "^6.24.1",
     "babel-register": "^6.26.0",
     "chai": "^4.1.2",
@@ -35,12 +55,14 @@
     "types-dirty-chai": "git+https://github.com/philgs/types-dirty-chai.git#development"
   },
   "dependencies": {
-    "babel-polyfill": "^6.26.0",
     "debug": "^3.1.0",
     "jsonwebtoken": "^8.1.0",
     "lodash": "^4.17.4",
     "ms": "^2.1.1",
     "superagent": "^3.8.2",
     "uuid": "^3.1.0"
+  },
+  "peerDependencies": {
+    "express": "^4.16.0"
   }
 }

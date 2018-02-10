@@ -38,42 +38,6 @@ describe( 'Glados includes an OAuth2 module that', function() {
             };
         } );
 
-        it( 'throws an error if the `app` argument is missing a `locals` field', function() {
-            expect( function() {
-                oauth2.configure( options, {} );
-            } ).to.throw( Error, utils.messagesFactory.appIsNotValid() );
-        } );
-
-        context( 'throws an error if the `options` argument is missing a required field:', function() {
-            it( 'the `callbackUrl` field must be a string', function() {
-                delete options.callbackUrl;
-                expect( function() {
-                    oauth2.configure( options, app );
-                } ).to.throw( Error, utils.messagesFactory.optionsObjectNotCorrect() );
-            } );
-
-            it( 'the `clientId` field must be a string', function() {
-                delete options.clientId;
-                expect( function() {
-                    oauth2.configure( options, app );
-                } ).to.throw( Error, utils.messagesFactory.optionsObjectNotCorrect() );
-            } );
-
-            it( 'the `clientSecret` field must be a string', function() {
-                delete options.clientSecret;
-                expect( function() {
-                    oauth2.configure( options, app );
-                } ).to.throw( Error, utils.messagesFactory.optionsObjectNotCorrect() );
-            } );
-
-            it( 'the `domain` field must be a string', function() {
-                delete options.domain;
-                expect( function() {
-                    oauth2.configure( options, app );
-                } ).to.throw( Error, utils.messagesFactory.optionsObjectNotCorrect() );
-            } );
-        } );
-
         it( 'throws an error if called more than once', function() {
             expect( function() {
                 oauth2.configure( options, app );
@@ -121,7 +85,7 @@ describe( 'Glados includes an OAuth2 module that', function() {
         } );
 
         it( 'uses the Session module to set an anonymous session cookie', function( done ) {
-            const stub = sinon.stub( session, 'setAnonymousSession' )
+            const stub = sinon.stub( session, 'handleAnonymousSession' )
                 .callsFake( () => Promise.resolve( {
                     sessionId: 'fake-session-id',
                     jwtToken: 'fake-id-token'
@@ -215,7 +179,7 @@ describe( 'Glados includes an OAuth2 module that', function() {
     } );
 
     context( 'has a `completeOAuth2` function that returns a middleware function, which', function() {
-        let anonIdStub = null;          // stub session.setAnonymousSession
+        let anonIdStub = null;          // stub session.handleAnonymousSession
         let expressApp = {
             locals: { }
         };
@@ -247,7 +211,7 @@ describe( 'Glados includes an OAuth2 module that', function() {
             utils._reset();
             oauth2.configure( gladosOptions, expressApp );
 
-            anonIdStub = sinon.stub( session, 'setAnonymousSession' )
+            anonIdStub = sinon.stub( session, 'handleAnonymousSession' )
                 .callsFake( ({ sessionId, jwtToken }) => Promise.resolve( { sessionId, jwtToken } ) );
             fakeResponse = {
                 ok: true,
@@ -288,8 +252,6 @@ describe( 'Glados includes an OAuth2 module that', function() {
                 } ).to.throw( Error, utils.messagesFactory.moduleNotInitialized( 'completeOAuth2' ) );
                 resetAll( () => { /* do nothing */ } );
             } );
-
-            it( 'the request object does not have the required fields' );
         } );
 
         it( 'redirects to the website root if the CSRF check fails', function( done ) {
