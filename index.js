@@ -1,5 +1,6 @@
 // @flow
 import debugAgent from 'debug';
+import cookies from './lib/cookie-middleware';
 import oauth2 from './lib/oauth2';
 import session from './lib/session';
 import type { UserLookupData, GladosUser } from './lib/user-store';
@@ -33,8 +34,7 @@ function configure( options:GladosOptions ) {
 }
 
 function getCookieMiddleware() {
-    // TODO Copy the guts of the `cookie-parser` library here
-    // TODO [1] >>> Implement signing and encrypting cookies <<<
+    return cookies.getMiddleware();
 }
 
 function getSessionMiddleware() {
