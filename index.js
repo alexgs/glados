@@ -6,6 +6,11 @@ import type { UserLookupData, GladosUser } from './lib/user-store';
 import type { $Request, $Response, NextFunction } from 'express';
 import type { GladosOAuthOptions } from './lib/oauth2';
 
+// TODO --> Prioritized priorities <--
+// [1] Signing and encrypting cookies
+// [2] Abstraction and in-memory, dev-only module for user data store
+// [3] Abstraction and in-memory, dev-only modules for other data stores (i.e. CSRF tokens and sessions)
+
 type GladosContext = {
     locals: { [name: string]: mixed }
 }
@@ -22,15 +27,14 @@ type GladosOptions = {
 
 const debug = debugAgent( 'glados:core' );
 
-// TODO >>> Create a `configure` function here that allows for DI but uses reasonable defaults, then configures the separate submodules
 function configure( options:GladosOptions ) {
     oauth2.configure( options.oauth, options.expressApp );
     session.configureStore( options.expressApp );
 }
 
 function getCookieMiddleware() {
-    // TODO >>> Copy the guts of the `cookie-parser` library here
-    // TODO >>> Implement signing and encrypting cookies
+    // TODO Copy the guts of the `cookie-parser` library here
+    // TODO [1] >>> Implement signing and encrypting cookies <<<
 }
 
 function getSessionMiddleware() {
