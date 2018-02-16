@@ -35,7 +35,33 @@ describe.only( 'Glados includes a Cookie Middleware module that', function() {
         } );
     } );
 
-    it( 'parses a JSON string from a cookie\'s value into an object' );
+    it( 'parses a JSON string from a cookie\'s value into an object', function( done ) {
+        const jsonCookieName = 'json-cookie';
+        const jsonCookieData = {
+            type: 'chocolate chip',
+            nomNomNom: true,
+            rating: 5
+        };
+        const jsonCookieValue = JSON.stringify( jsonCookieData );
+        const stringCookieName = 'my-awesome-cookie';
+        const stringCookieValue = 'chocolate-chip';
+        const request = {
+            headers: {
+                cookie: `${stringCookieName}=${stringCookieValue}; ${jsonCookieName}=${jsonCookieValue}`
+            }
+        };
+        const response = {};
+
+        const middleware = gladosCookies.getMiddleware();
+        middleware( request, response, () => {
+            expect( _.isPlainObject( request.cookies ) ).to.equal( true );
+            expect( _.has( request.cookies, stringCookieName ) ).to.equal( true );
+            expect( request.cookies[ stringCookieName ] ).to.equal( stringCookieValue );
+            expect( _.has( request.cookies, jsonCookieName ) ).to.equal( true );
+            expect( request.cookies[ jsonCookieName ] ).to.deep.equal( jsonCookieData );
+            done();
+        } );
+    } );
 
     context( 'manages cookies on the client. It', function() {
         it( 'deletes cookies from the client' );
