@@ -7,7 +7,7 @@ import ms from 'ms';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 
-import gladosCookies from '../../lib/cookie-middleware';
+import gladosCookies from '../../lib/cookies';
 
 const debug = debugAgent( 'glados:unit-test' );
 
@@ -15,60 +15,72 @@ chai.use( sinonChai );
 chai.use( chaiAsPromised );
 chai.use( dirtyChai );
 
-describe.only( 'Glados includes a Cookie Middleware module that', function() {
-    it( 'parses an http `Cookie` header and stores cookies on the Express Request object', function( done ) {
-        const cookieName = 'my-awesome-cookie';
-        const cookieValue = 'chocolate-chip';
-        const request = {
-            headers: {
-                cookie: `${cookieName}=${cookieValue}; foo=bar; equation=E%3Dmc%5E2`
-            }
-        };
-        const response = {};
+describe.only( 'Glados includes a Cookie module that', function() {
+    context( 'provides a middleware function that', function() {
+        it( 'parses an http `Cookie` header and stores cookies on the Express Request object', function( done ) {
+            const cookieName = 'my-awesome-cookie';
+            const cookieValue = 'chocolate-chip';
+            const request = {
+                headers: {
+                    cookie: `${cookieName}=${cookieValue}; foo=bar; equation=E%3Dmc%5E2`
+                }
+            };
+            const response = {};
 
-        const middleware = gladosCookies.getMiddleware();
-        middleware( request, response, () => {
-            expect( _.isPlainObject( request.cookies ) ).to.equal( true );
-            expect( _.has( request.cookies, cookieName ) ).to.equal( true );
-            expect( request.cookies[ cookieName ] ).to.equal( cookieValue );
-            done();
+            const middleware = gladosCookies.getMiddleware();
+            middleware( request, response, () => {
+                expect( _.isPlainObject( request.cookies ) ).to.equal( true );
+                expect( _.has( request.cookies, cookieName ) ).to.equal( true );
+                expect( request.cookies[ cookieName ] ).to.equal( cookieValue );
+                done();
+            } );
         } );
-    } );
 
-    it( 'parses a JSON string from a cookie\'s value into an object', function( done ) {
-        const jsonCookieName = 'json-cookie';
-        const jsonCookieData = {
-            type: 'chocolate chip',
-            nomNomNom: true,
-            rating: 5
-        };
-        const jsonCookieValue = JSON.stringify( jsonCookieData );
-        const stringCookieName = 'my-awesome-cookie';
-        const stringCookieValue = 'chocolate-chip';
-        const request = {
-            headers: {
-                cookie: `${stringCookieName}=${stringCookieValue}; ${jsonCookieName}=${jsonCookieValue}`
-            }
-        };
-        const response = {};
+        it( 'parses a JSON string from a cookie\'s value into an object', function( done ) {
+            const jsonCookieName = 'json-cookie';
+            const jsonCookieData = {
+                type: 'chocolate chip',
+                nomNomNom: true,
+                rating: 5
+            };
+            const jsonCookieValue = JSON.stringify( jsonCookieData );
+            const stringCookieName = 'my-awesome-cookie';
+            const stringCookieValue = 'chocolate-chip';
+            const request = {
+                headers: {
+                    cookie: `${stringCookieName}=${stringCookieValue}; ${jsonCookieName}=${jsonCookieValue}`
+                }
+            };
+            const response = {};
 
-        const middleware = gladosCookies.getMiddleware();
-        middleware( request, response, () => {
-            expect( _.isPlainObject( request.cookies ) ).to.equal( true );
-            expect( _.has( request.cookies, stringCookieName ) ).to.equal( true );
-            expect( request.cookies[ stringCookieName ] ).to.equal( stringCookieValue );
-            expect( _.has( request.cookies, jsonCookieName ) ).to.equal( true );
-            expect( request.cookies[ jsonCookieName ] ).to.deep.equal( jsonCookieData );
-            done();
+            const middleware = gladosCookies.getMiddleware();
+            middleware( request, response, () => {
+                expect( _.isPlainObject( request.cookies ) ).to.equal( true );
+                expect( _.has( request.cookies, stringCookieName ) ).to.equal( true );
+                expect( request.cookies[ stringCookieName ] ).to.equal( stringCookieValue );
+                expect( _.has( request.cookies, jsonCookieName ) ).to.equal( true );
+                expect( request.cookies[ jsonCookieName ] ).to.deep.equal( jsonCookieData );
+                done();
+            } );
         } );
+
+        it( 'decrypts data received from the client' );
+        it( 'verifies data received from the client' );
     } );
 
-    context( 'manages cookies on the client. It', function() {
-        it( 'deletes cookies from the client' );
-        it( 'sends cookies to the client')
+    it( 'has a function `hasAnonSessionCookie` that' );
+    it( 'has a function `getAnonSessionCookie` that' );
+    it( 'has a function `removeAnonSessionCookie` that' );
+    context( 'has a function `setAnonSessionCookie` that', function() {
+        it( 'encrypts data before sending to the client' );
+        it( 'signs data before sending to the client' );
     } );
-    it( 'encrypts data before sending to the client' );
-    it( 'signs data before sending to the client' );
-    it( 'decrypts data received from the client' );
-    it( 'verifies data received from the client' );
+
+    it( 'has a function `hasSecureSessionCookie` that' );
+    it( 'has a function `getSecureSessionCookie` that' );
+    it( 'has a function `removeSecureSessionCookie` that' );
+    context( 'has a function `setSecureSessionCookie` that', function() {
+        it( 'encrypts data before sending to the client' );
+        it( 'signs data before sending to the client' );
+    } );
 } );

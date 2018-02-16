@@ -1,6 +1,6 @@
 // @flow
 import debugAgent from 'debug';
-import cookies from './lib/cookie-middleware';
+import cookies from './lib/cookies';
 import oauth2 from './lib/oauth2';
 import session from './lib/session';
 import type { UserLookupData, GladosUser } from './lib/user-store';
