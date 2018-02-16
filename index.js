@@ -12,11 +12,18 @@ import type { GladosOAuthOptions } from './lib/oauth2';
 // [2] Abstraction and in-memory, dev-only module for user data store
 // [3] Abstraction and in-memory, dev-only modules for other data stores (i.e. CSRF tokens and sessions)
 
+type AuthenticationResult = {
+    reason:string|null,
+    value:boolean
+};
 type GladosContext = {
     locals: { [name: string]: mixed }
 }
 type GladosRequest = $Request & {
-    session:mixed       // Replace with Session Object
+    session: {
+        isAuthenticated: GladosRequest => AuthenticationResult
+    },
+    user:?mixed         // TODO [2] >>> The user object can be expanded/better defined <<<
 };
 type GladosOptions = {
     expressApp: GladosContext,
