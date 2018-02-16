@@ -28,13 +28,14 @@ describe.only( 'Glados includes a Cookie Middleware module that', function() {
 
         const middleware = gladosCookies.getMiddleware();
         middleware( request, response, () => {
-            expect( _.has( request.headers, 'cookie') ).to.equal( false );
             expect( _.isPlainObject( request.cookies ) ).to.equal( true );
             expect( _.has( request.cookies, cookieName ) ).to.equal( true );
             expect( request.cookies[ cookieName ] ).to.equal( cookieValue );
             done();
         } );
     } );
+
+    it( 'parses a JSON string from a cookie\'s value into an object' );
 
     context( 'manages cookies on the client. It', function() {
         it( 'deletes cookies from the client' );
