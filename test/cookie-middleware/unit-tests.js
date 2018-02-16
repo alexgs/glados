@@ -15,8 +15,27 @@ chai.use( sinonChai );
 chai.use( chaiAsPromised );
 chai.use( dirtyChai );
 
-describe( 'Glados includes a Cookie Middleware module that', function() {
-    it( 'parses an http `Cookie` header and stores cookies on the Express Request object' );
+describe.only( 'Glados includes a Cookie Middleware module that', function() {
+    it( 'parses an http `Cookie` header and stores cookies on the Express Request object', function( done ) {
+        const cookieName = 'my-awesome-cookie';
+        const cookieValue = 'chocolate-chip';
+        const request = {
+            headers: {
+                cookie: `${cookieName}=${cookieValue}; foo=bar; equation=E%3Dmc%5E2`
+            }
+        };
+        const response = {};
+
+        const middleware = gladosCookies.getMiddleware();
+        middleware( request, response, () => {
+            expect( _.has( request.headers, 'cookie') ).to.equal( false );
+            expect( _.isPlainObject( request.cookies ) ).to.equal( true );
+            expect( _.has( request.cookies, cookieName ) ).to.equal( true );
+            expect( request.cookies[ cookieName ] ).to.equal( cookieValue );
+            done();
+        } );
+    } );
+
     context( 'manages cookies on the client. It', function() {
         it( 'deletes cookies from the client' );
         it( 'sends cookies to the client')
