@@ -9,6 +9,7 @@ import sinonChai from 'sinon-chai';
 import sodium from '@philgs/sodium';
 
 import gladosCookies from '../../lib/cookies';
+import { COOKIE_NAME } from '../../lib/constants';
 
 const debug = debugAgent( 'glados:unit-test' );
 
@@ -121,19 +122,39 @@ describe.only( 'Glados includes a Cookie module that', function() {
 
         it( 'encrypts the cookie payload', function() {
             gladosCookies.setAnonSessionCookie( response, payload );
-
-            // Normally in BDD, we wouldn't test for calling a specific function, but the use of
-            // cryptographic functions is a special case
             expect( sodium.encrypt ).to.have.been.calledOnce();
         } );
 
         it( 'sends the payload to the client', function() {
-            const testsComplete = false;
+            gladosCookies.setAnonSessionCookie( response, payload );
 
-            // TODO Decrypt the payload and verify that it matches
-            expect( testsComplete ).to.equal( true, 'There are more tests to write!' );
+            expect( response.cookie ).to.have.been.calledTwice();
+            expect( response.cookie.calledWithExactly(
+                COOKIE_NAME.SESSION.ANONYMOUS,
+                sinon.match.string,
+                sinon.match( gladosCookies.COOKIE_OPTIONS.ANONYMOUS )
+            ) ).to.equal( true );
+
+            // Decrypt the message
+            const cipher = Buffer.from( response.cookie.args[0][1], gladosCookies.PAYLOAD_ENCODING );
+            const nonce = Buffer.from( response.cookie.args[1][1], gladosCookies.PAYLOAD_ENCODING );
+            const jsonMessage = sodium.decrypt( cipher, nonce, sessionKey ).toString();
+
+            // Since the payload is always `JSON.stringify`'d, we must parse it to get the correct value
+            const clearMessage = JSON.parse( jsonMessage );
+            expect( clearMessage ).to.equal( payload );
         } );
-        it( 'sends the encryption nonce to the client' );
+
+        it( 'sends the encryption nonce to the client', function() {
+            gladosCookies.setAnonSessionCookie( response, payload );
+
+            expect( response.cookie ).to.have.been.calledTwice();
+            expect( response.cookie.calledWithExactly(
+                COOKIE_NAME.NONCE,
+                sinon.match.string,
+                sinon.match( gladosCookies.COOKIE_OPTIONS.ANONYMOUS )
+            ) ).to.equal( true );
+        } );
     } );
 
     it( 'has a function `hasSecureSessionCookie` that' );

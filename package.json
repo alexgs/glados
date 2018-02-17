@@ -50,7 +50,7 @@
     "chai-as-promised": "^7.1.1",
     "dirty-chai": "^2.0.1",
     "mocha": "^4.0.1",
-    "sinon": "^4.1.3",
+    "sinon": "^4.3.0",
     "sinon-chai": "^2.14.0",
     "types-dirty-chai": "git+https://github.com/philgs/types-dirty-chai.git#development"
   },
