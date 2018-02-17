@@ -98,9 +98,42 @@ describe.only( 'Glados includes a Cookie module that', function() {
     it( 'has a function `hasAnonSessionCookie` that' );
     it( 'has a function `getAnonSessionCookie` that' );
     it( 'has a function `removeAnonSessionCookie` that' );
+
     context( 'has a function `setAnonSessionCookie` that', function() {
-        it( 'encrypts data before sending to the client' );
-        it( 'signs data before sending to the client' );
+        const payload = 'i-am-a-secret';
+        const response = {
+            cookie: ( name, value, options ) => undefined
+        };
+        const sessionKey = sodium.key();
+        const sandbox = sinon.createSandbox();
+
+
+        beforeEach( function() {
+            gladosCookies.configure( sessionKey, sodium );
+            sandbox.spy( response, 'cookie' );
+            sandbox.spy( sodium, 'encrypt' );
+        } );
+
+        afterEach( function() {
+            gladosCookies._reset();
+            sandbox.restore();
+        } );
+
+        it( 'encrypts the cookie payload', function() {
+            gladosCookies.setAnonSessionCookie( response, payload );
+
+            // Normally in BDD, we wouldn't test for calling a specific function, but the use of
+            // cryptographic functions is a special case
+            expect( sodium.encrypt ).to.have.been.calledOnce();
+        } );
+
+        it( 'sends the payload to the client', function() {
+            const testsComplete = false;
+
+            // TODO Decrypt the payload and verify that it matches
+            expect( testsComplete ).to.equal( true, 'There are more tests to write!' );
+        } );
+        it( 'sends the encryption nonce to the client' );
     } );
 
     it( 'has a function `hasSecureSessionCookie` that' );
