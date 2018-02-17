@@ -18,10 +18,21 @@ chai.use( dirtyChai );
 
 describe.only( 'Glados includes a Cookie module that', function() {
     context( 'has a `configure` function, which', function() {
+
+        beforeEach( function() {
+            gladosCookies._reset();
+        } );
+
         it( 'accepts a `sessionKey` parameter that is used for encrypting session cookies', function() {
             const sessionKey = sodium.key();
             gladosCookies.configure( sessionKey );
             expect( gladosCookies.getSessionKey() ).to.equal( sessionKey );
+        } );
+
+        it( 'accepts a `cookieCrypto` parameter that provides a library of cryptographic functions', function() {
+            const sessionKey = sodium.key();
+            gladosCookies.configure( sessionKey, sodium );
+            expect( gladosCookies.getCrypto() ).to.equal( sodium );
         } );
 
         it( 'throws an error if the `sessionKey` is the wrong length', function() {
