@@ -55,6 +55,7 @@
     "types-dirty-chai": "git+https://github.com/philgs/types-dirty-chai.git#development"
   },
   "dependencies": {
+    "@philgs/sodium": "^1.0.1",
     "cookie": "^0.3.1",
     "debug": "^3.1.0",
     "jsonwebtoken": "^8.1.0",

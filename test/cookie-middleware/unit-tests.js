@@ -6,6 +6,7 @@ import _ from 'lodash';
 import ms from 'ms';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import sodium from '@philgs/sodium';
 
 import gladosCookies from '../../lib/cookies';
 
@@ -16,6 +17,21 @@ chai.use( chaiAsPromised );
 chai.use( dirtyChai );
 
 describe.only( 'Glados includes a Cookie module that', function() {
+    context( 'has a `configure` function, which', function() {
+        it( 'accepts a `sessionKey` parameter that is used for encrypting session cookies', function() {
+            const sessionKey = sodium.key();
+            gladosCookies.configure( sessionKey );
+            expect( gladosCookies.getSessionKey() ).to.equal( sessionKey );
+        } );
+
+        it( 'throws an error if the `sessionKey` is the wrong length', function() {
+            const sessionKey = Buffer.from( 'I am a bad key.' );
+            expect( function() {
+                gladosCookies.configure( sessionKey );
+            } ).to.throw( Error, gladosCookies.messages.incorrectKeySize( sessionKey ) );
+        } );
+    } );
+
     context( 'provides a middleware function that', function() {
         it( 'parses an http `Cookie` header and stores cookies on the Express Request object', function( done ) {
             const cookieName = 'my-awesome-cookie';
