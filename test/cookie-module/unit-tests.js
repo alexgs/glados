@@ -318,8 +318,59 @@ describe.only( 'Glados includes a Cookie module that', function() {
     } );
 
     context( 'has a function `setSecureSessionCookie` that', function() {
-        it( 'encrypts the cookie payload' );
-        it( 'sends the payload to the client' );
-        it( 'sends the encryption nonce to the client' );
+        const payload = {
+            fionaApple: 'Criminal',
+            lit: 'My Own Worst Enemy',
+            theSofties: 'Charms around Your Wrist',
+            theSugarcubes: 'Hit'
+        };
+        const response = {
+            cookie: ( name, value, options ) => undefined
+        };
+        const sessionKey = sodium.newKey();
+        const sandbox = sinon.createSandbox();
+
+        beforeEach( function() {
+            gladosCookies.configure( sessionKey, sodium );
+            sandbox.spy( response, 'cookie' );
+            sandbox.spy( crypto, 'encrypt' );
+        } );
+
+        afterEach( function() {
+            sandbox.restore();
+        } );
+
+        it( 'encrypts the cookie payload', function() {
+            gladosCookies.setSecureSessionCookie( response, payload );
+            expect( crypto.encrypt ).to.have.been.calledOnce();
+        } );
+
+        it( 'sends the payload to the client', function() {
+            gladosCookies.setSecureSessionCookie( response, payload );
+
+            expect( response.cookie ).to.have.been.calledTwice();
+            expect( response.cookie.calledWithExactly(
+                COOKIE_NAME.SESSION.SECURE,
+                sinon.match.string,
+                sinon.match( gladosCookies.COOKIE_OPTIONS.SECURE )
+            ) ).to.equal( true );
+
+            // Decrypt the message
+            const cipher = sodium.cipherFromHex( response.cookie.args[0][1] );
+            const nonce = sodium.nonceFromHex( response.cookie.args[1][1] );
+            const clear = cipher.decrypt( sessionKey, nonce );
+            expect( clear.json ).to.deep.equal( payload );
+        } );
+
+        it( 'sends the encryption nonce to the client', function() {
+            gladosCookies.setSecureSessionCookie( response, payload );
+
+            expect( response.cookie ).to.have.been.calledTwice();
+            expect( response.cookie.calledWithExactly(
+                COOKIE_NAME.NONCE,
+                sinon.match.string,
+                sinon.match( gladosCookies.COOKIE_OPTIONS.SECURE )
+            ) ).to.equal( true );
+        } );
     } );
 } );
