@@ -149,7 +149,51 @@ describe.only( 'Glados includes a Cookie module that', function() {
             } );
         } );
 
-        it( 'throws an error if the client sends *both* anonymous and secure session cookies' );
+        it( 'throws an error if the client sends *both* anonymous and secure session cookies', function( done ) {
+            // Create an encrypted payload for the cookie
+            const nonce = sodium.newNonce();
+            const songs = {
+                fionaApple: 'Criminal',
+                lit: 'My Own Worst Enemy',
+                theSofties: 'Charms around Your Wrist',
+                theSugarcubes: 'Hit'
+            };
+            const objectPayload = sodium.clearFromObject( songs );
+            const cipherObjectPayload = objectPayload.encrypt( sessionKey, nonce );
+            const stringPayload = sodium.clearFromString( 'Remove the Stone of Shame. Attach the Stone of Triumph!' );
+            // **WARNING:** Do **NOT** ever reuse a nonce like this in production!
+            const cipherStringPayload = stringPayload.encrypt( sessionKey, nonce );
+            const request = {
+                headers: {
+                    cookie: [
+                        `${stringCookieName}=${stringCookieValue}`,
+                        `${COOKIE_NAME.SESSION.ANONYMOUS}=${cipherStringPayload.hex}`,
+                        `${COOKIE_NAME.NONCE}=${nonce.hex}`,
+                        `${jsonCookieName}=${jsonCookieValue}`,
+                        `${COOKIE_NAME.SESSION.SECURE}=${cipherObjectPayload.hex}`
+                    ].join(';')
+                }
+            };
+            const response = {};
+
+            const middleware = gladosCookies.getMiddleware();
+            expect( function() {
+                middleware( request, response, () => {
+                    // Test handling of other cookies
+                    expect( _.isPlainObject( request.cookies ) ).to.equal( true );
+                    expect( _.has( request.cookies, stringCookieName ) ).to.equal( true );
+                    expect( request.cookies[ stringCookieName ] ).to.equal( stringCookieValue );
+                    expect( _.has( request.cookies, jsonCookieName ) ).to.equal( true );
+                    expect( request.cookies[ jsonCookieName ] ).to.deep.equal( jsonCookieData );
+
+                    // Test handling of the anonymous session cookie
+                    const clearObject = request.cookies[ COOKIE_NAME.SESSION.SECURE ];
+                    expect( clearObject ).to.deep.equal( objectPayload.json );
+                    done( 'Should not get here!' );
+                } )
+            } ).to.throw( Error, gladosCookies.messages.illegalCookies() );
+            done();
+        } );
     } );
 
     context( 'has a `configure` function that', function() {
