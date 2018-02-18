@@ -134,7 +134,7 @@ describe.only( 'Glados includes a Cookie module that', function() {
             expect( clearPayload ).to.deep.equal( plainPayload.json );
         } );
 
-        it( 'throws an Error if the Request object does not have an anonymous session cookie', function() {
+        it( 'throws an error if the Request object does not have an anonymous session cookie', function() {
             const request = {};
 
             gladosCookies.configure( sessionKey, sodium );
@@ -179,22 +179,51 @@ describe.only( 'Glados includes a Cookie module that', function() {
 
     it( 'has a function `hasSecureSessionCookie` that' );
 
-    context.skip( 'has a function `removeAnonSessionCookie` that', function() {
-        // TODO --> Start here <--
-        it( 'returns `true` if the Request object has an anonymous session cookie', function() {
-            const request = {
+    context( 'has a function `removeAnonSessionCookie` that', function() {
+        let request = null;
+        let response = null;
+        const sandbox = sinon.createSandbox();
+        const sessionKey = sodium.newKey();
+
+        beforeEach( function(  ) {
+            request = {
                 cookies: {
+                    [COOKIE_NAME.NONCE]: 'the next statement is true',
                     [COOKIE_NAME.SESSION.ANONYMOUS]: 'this is a false statement'
                 }
             };
-            const result = gladosCookies.hasAnonSessionCookie( request );
-            expect( result ).to.equal( true );
+            response = {
+                clearCookie: ( name, options ) => delete request.cookies[ name ]
+            };
+            sandbox.spy( response, 'clearCookie' );
         } );
 
-        it( 'returns `false` if the Request object does not have an anonymous session cookie', function() {
-            const request = {};
-            const result = gladosCookies.hasAnonSessionCookie( request );
-            expect( result ).to.equal( false );
+        afterEach( function() {
+            sandbox.restore();
+        } );
+
+        it( 'removes the anonymous session cookie from the client', function() {
+            gladosCookies.configure( sessionKey, sodium );
+            gladosCookies.removeAnonSessionCookie( request, response );
+
+            expect( response.clearCookie ).to.have.been.calledTwice();
+            expect( response.clearCookie.calledWithExactly(
+                COOKIE_NAME.SESSION.ANONYMOUS,
+                sinon.match( gladosCookies.COOKIE_OPTIONS.ANONYMOUS )
+            ) ).to.equal( true );
+            expect( response.clearCookie.calledWithExactly(
+                COOKIE_NAME.NONCE,
+                sinon.match( gladosCookies.COOKIE_OPTIONS.ANONYMOUS )
+            ) ).to.equal( true );
+        } );
+
+        it( 'throws an error if the Request object does not have an anonymous session cookie', function() {
+            request = {};
+            gladosCookies.configure( sessionKey, sodium );
+
+            expect( function() {
+                gladosCookies.removeAnonSessionCookie( request, response );
+            } ).to.throw( Error, gladosCookies.messages.noSession( 'anonymous' ) );
         } );
     } );
 
