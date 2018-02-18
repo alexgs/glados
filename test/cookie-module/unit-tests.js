@@ -23,13 +23,28 @@ describe.only( 'Glados includes a Cookie module that', function() {
         gladosCookies._reset();
     } );
 
-    context( 'provides a middleware function that', function() {
+    context.only( 'provides a middleware function that', function() {
+        const jsonCookieName = 'json-cookie';
+        const jsonCookieData = {
+            type: 'chocolate chip',
+            nomNomNom: true,
+            rating: 5
+        };
+        const jsonCookieValue = JSON.stringify( jsonCookieData );
+        const sessionKey = sodium.newKey();
+        const stringCookieName = 'my-awesome-cookie';
+        const stringCookieValue = 'chocolate-chip';
+
+        beforeEach( function() {
+            gladosCookies.configure( sessionKey, sodium );
+            // sandbox.spy( response, 'cookie' );
+            // sandbox.spy( crypto, 'encrypt' );
+        } );
+
         it( 'parses an http `Cookie` header and stores cookies on the Express Request object', function( done ) {
-            const cookieName = 'my-awesome-cookie';
-            const cookieValue = 'chocolate-chip';
             const request = {
                 headers: {
-                    cookie: `${cookieName}=${cookieValue}; foo=bar; equation=E%3Dmc%5E2`
+                    cookie: `${stringCookieName}=${stringCookieValue}; foo=bar; equation=E%3Dmc%5E2`
                 }
             };
             const response = {};
@@ -37,22 +52,13 @@ describe.only( 'Glados includes a Cookie module that', function() {
             const middleware = gladosCookies.getMiddleware();
             middleware( request, response, () => {
                 expect( _.isPlainObject( request.cookies ) ).to.equal( true );
-                expect( _.has( request.cookies, cookieName ) ).to.equal( true );
-                expect( request.cookies[ cookieName ] ).to.equal( cookieValue );
+                expect( _.has( request.cookies, stringCookieName ) ).to.equal( true );
+                expect( request.cookies[ stringCookieName ] ).to.equal( stringCookieValue );
                 done();
             } );
         } );
 
         it( 'parses a JSON string from a cookie\'s value into an object', function( done ) {
-            const jsonCookieName = 'json-cookie';
-            const jsonCookieData = {
-                type: 'chocolate chip',
-                nomNomNom: true,
-                rating: 5
-            };
-            const jsonCookieValue = JSON.stringify( jsonCookieData );
-            const stringCookieName = 'my-awesome-cookie';
-            const stringCookieValue = 'chocolate-chip';
             const request = {
                 headers: {
                     cookie: `${stringCookieName}=${stringCookieValue}; ${jsonCookieName}=${jsonCookieValue}`
@@ -71,8 +77,42 @@ describe.only( 'Glados includes a Cookie module that', function() {
             } );
         } );
 
-        it( 'decrypts data received from the client' );
-        it( 'verifies data received from the client' );
+        it( 'decrypts anonymous session data received from the client', function( done ) {
+            // Create an encrypted payload for the cookie
+            const nonce = sodium.newNonce();
+            const plainPayload = sodium.clearFromString( 'Remove the Stone of Shame. Attach the Stone of Triumph!' );
+            const cipherPayload = plainPayload.encrypt( sessionKey, nonce );
+            const request = {
+                headers: {
+                    cookie: [
+                        `${stringCookieName}=${stringCookieValue}`,
+                        `${COOKIE_NAME.NONCE}=${nonce.hex}`,
+                        `${jsonCookieName}=${jsonCookieValue}`,
+                        `${COOKIE_NAME.SESSION.ANONYMOUS}=${cipherPayload.hex}`
+                        ].join(';')
+                }
+            };
+            const response = {};
+
+            const middleware = gladosCookies.getMiddleware();
+            middleware( request, response, () => {
+                // Test handling of other cookies
+                expect( _.isPlainObject( request.cookies ) ).to.equal( true );
+                expect( _.has( request.cookies, stringCookieName ) ).to.equal( true );
+                expect( request.cookies[ stringCookieName ] ).to.equal( stringCookieValue );
+                expect( _.has( request.cookies, jsonCookieName ) ).to.equal( true );
+                expect( request.cookies[ jsonCookieName ] ).to.deep.equal( jsonCookieData );
+
+                // Test handling of the anonymous session cookie
+                const clearText = request.cookies[ COOKIE_NAME.SESSION.ANONYMOUS ];
+                expect( clearText ).to.equal( plainPayload.string );
+                done();
+            } );
+        } );
+        
+        it( 'decrypts secure session data received from the client' );
+
+        it( 'throws an error if the client sends *both* anonymous and secure session cookies' );
     } );
 
     context( 'has a `configure` function that', function() {
