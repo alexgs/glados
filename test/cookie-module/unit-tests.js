@@ -310,8 +310,51 @@ describe.only( 'Glados includes a Cookie module that', function() {
     } );
 
     context( 'has a function `removeSecureSessionCookie` that', function() {
-        it( 'removes the anonymous session cookie from the client' );
-        it( 'throws an error if the Request object does not have an anonymous session cookie' );
+        let request = null;
+        let response = null;
+        const sandbox = sinon.createSandbox();
+        const sessionKey = sodium.newKey();
+
+        beforeEach( function(  ) {
+            request = {
+                cookies: {
+                    [COOKIE_NAME.NONCE]: 'the next statement is true',
+                    [COOKIE_NAME.SESSION.SECURE]: 'this is a false statement'
+                }
+            };
+            response = {
+                clearCookie: ( name, options ) => delete request.cookies[ name ]
+            };
+            sandbox.spy( response, 'clearCookie' );
+        } );
+
+        afterEach( function() {
+            sandbox.restore();
+        } );
+
+        it( 'removes the secure session cookie from the client', function() {
+            gladosCookies.configure( sessionKey, sodium );
+            gladosCookies.removeSecureSessionCookie( request, response );
+
+            expect( response.clearCookie ).to.have.been.calledTwice();
+            expect( response.clearCookie.calledWithExactly(
+                COOKIE_NAME.SESSION.SECURE,
+                sinon.match( gladosCookies.COOKIE_OPTIONS.SECURE )
+            ) ).to.equal( true );
+            expect( response.clearCookie.calledWithExactly(
+                COOKIE_NAME.NONCE,
+                sinon.match( gladosCookies.COOKIE_OPTIONS.SECURE )
+            ) ).to.equal( true );
+        } );
+
+        it( 'throws an error if the Request object does not have an secure session cookie', function() {
+            request = {};
+            gladosCookies.configure( sessionKey, sodium );
+
+            expect( function() {
+                gladosCookies.removeSecureSessionCookie( request, response );
+            } ).to.throw( Error, gladosCookies.messages.noSession( 'secure' ) );
+        } );
     } );
 
     context( 'has a function `setAnonSessionCookie` that', function() {
