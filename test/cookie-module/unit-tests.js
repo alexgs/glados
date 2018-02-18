@@ -144,14 +144,18 @@ describe.only( 'Glados includes a Cookie module that', function() {
         } );
     } );
 
-    it( 'has a function `getSecureSessionCookie` that' );
+    context( 'has a function `getSecureSessionCookie` that', function() {
+        it( 'returns the cookie payload if the Request object has an anonymous session cookie' );
+        it( 'returns an object if the payload is a JSON string' );
+        it( 'throws an error if the Request object does not have an anonymous session cookie' );
+    } );
 
     context( 'has a function `hasAnonSessionCookie` that', function() {
         it( 'returns `true` if the Request object has an anonymous session cookie and a nonce cookie', function() {
             const request = {
                 cookies: {
-                    [COOKIE_NAME.NONCE]: 'Mimsy were the mome raths.',
-                    [COOKIE_NAME.SESSION.ANONYMOUS]: 'this is a false statement'
+                    [COOKIE_NAME.NONCE]: 'portmanteau',
+                    [COOKIE_NAME.SESSION.ANONYMOUS]: 'jabberwocky'
                 }
             };
             const result = gladosCookies.hasAnonSessionCookie( request );
@@ -164,20 +168,49 @@ describe.only( 'Glados includes a Cookie module that', function() {
             expect( noCookies ).to.equal( false );
 
             request.cookies = {
-                [COOKIE_NAME.SESSION.ANONYMOUS]: 'this is a false statement'
+                [COOKIE_NAME.SESSION.ANONYMOUS]: 'jabberwocky'
             };
             const missingNonceCookie = gladosCookies.hasAnonSessionCookie( request );
             expect( missingNonceCookie ).to.equal( false );
 
             request.cookies = {
-                [COOKIE_NAME.NONCE]: 'Mimsy were the mome raths.'
+                [COOKIE_NAME.NONCE]: 'portmanteau'
             };
             const missingSessionCookie = gladosCookies.hasAnonSessionCookie( request );
             expect( missingSessionCookie ).to.equal( false );
         } );
     } );
 
-    it( 'has a function `hasSecureSessionCookie` that' );
+    context( 'has a function `hasSecureSessionCookie` that', function() {
+        it( 'returns `true` if the Request object has a secure session cookie and a nonce cookie', function() {
+            const request = {
+                cookies: {
+                    [COOKIE_NAME.NONCE]: 'portmanteau',
+                    [COOKIE_NAME.SESSION.SECURE]: 'jabberwocky'
+                }
+            };
+            const result = gladosCookies.hasSecureSessionCookie( request );
+            expect( result ).to.equal( true );
+        } );
+
+        it( 'returns `false` if the Request object is missing a secure session cookie or a nonce cookie', function() {
+            const request = {};
+            const noCookies = gladosCookies.hasSecureSessionCookie( request );
+            expect( noCookies ).to.equal( false );
+
+            request.cookies = {
+                [COOKIE_NAME.SESSION.SECURE]: 'jabberwocky'
+            };
+            const missingNonceCookie = gladosCookies.hasSecureSessionCookie( request );
+            expect( missingNonceCookie ).to.equal( false );
+
+            request.cookies = {
+                [COOKIE_NAME.NONCE]: 'portmanteau'
+            };
+            const missingSessionCookie = gladosCookies.hasSecureSessionCookie( request );
+            expect( missingSessionCookie ).to.equal( false );
+        } );
+    } );
 
     context( 'has a function `removeAnonSessionCookie` that', function() {
         let request = null;
@@ -227,7 +260,10 @@ describe.only( 'Glados includes a Cookie module that', function() {
         } );
     } );
 
-    it( 'has a function `removeSecureSessionCookie` that' );
+    context( 'has a function `removeSecureSessionCookie` that', function() {
+        it( 'removes the anonymous session cookie from the client' );
+        it( 'throws an error if the Request object does not have an anonymous session cookie' );
+    } );
 
     context( 'has a function `setAnonSessionCookie` that', function() {
         const payload = 'i-am-a-secret';
@@ -282,7 +318,8 @@ describe.only( 'Glados includes a Cookie module that', function() {
     } );
 
     context( 'has a function `setSecureSessionCookie` that', function() {
-        it( 'encrypts data before sending to the client' );
-        it( 'signs data before sending to the client' );
+        it( 'encrypts the cookie payload' );
+        it( 'sends the payload to the client' );
+        it( 'sends the encryption nonce to the client' );
     } );
 } );
