@@ -23,28 +23,6 @@ describe.only( 'Glados includes a Cookie module that', function() {
         gladosCookies._reset();
     } );
 
-    context( 'has a `configure` function, which', function() {
-
-        it( 'accepts a `sessionKey` parameter that is used for encrypting session cookies', function() {
-            const sessionKey = crypto.key();
-            gladosCookies.configure( sessionKey );
-            expect( gladosCookies.getSessionKey() ).to.equal( sessionKey );
-        } );
-
-        it( 'accepts a `cookieCrypto` parameter that provides a library of cryptographic functions', function() {
-            const sessionKey = crypto.key();
-            gladosCookies.configure( sessionKey, crypto );
-            expect( gladosCookies.getCrypto() ).to.equal( crypto );
-        } );
-
-        it.skip( 'throws an error if the `sessionKey` is the wrong length', function() {
-            const sessionKey = Buffer.from( 'I am a bad key.' );
-            expect( function() {
-                gladosCookies.configure( sessionKey );
-            } ).to.throw( Error, gladosCookies.messages.incorrectKeySize( sessionKey ) );
-        } );
-    } );
-
     context( 'provides a middleware function that', function() {
         it( 'parses an http `Cookie` header and stores cookies on the Express Request object', function( done ) {
             const cookieName = 'my-awesome-cookie';
@@ -97,6 +75,55 @@ describe.only( 'Glados includes a Cookie module that', function() {
         it( 'verifies data received from the client' );
     } );
 
+    context( 'has a `configure` function that', function() {
+        it( 'accepts a `sessionKey` parameter that is used for encrypting session cookies', function() {
+            const sessionKey = crypto.key();
+            gladosCookies.configure( sessionKey );
+            expect( gladosCookies.getSessionKey() ).to.equal( sessionKey );
+        } );
+
+        it( 'accepts a `cookieCrypto` parameter that provides a library of cryptographic functions', function() {
+            const sessionKey = crypto.key();
+            gladosCookies.configure( sessionKey, crypto );
+            expect( gladosCookies.getCrypto() ).to.equal( crypto );
+        } );
+    } );
+
+    context( 'has a function `getAnonSessionCookie` that', function() {
+        const sessionKey = sodium.newKey();
+
+        it( 'returns the cookie payload if the Request object has an anonymous session cookie', function() {
+            // Create an encrypted payload for the cookie
+            const nonce = sodium.newNonce();
+            const plainPayload = sodium.clearFromString( 'Remove the Stone of Shame. Attach the Stone of Triumph!' );
+            const cipherPayload = plainPayload.encrypt( sessionKey, nonce );
+            const request = {
+                cookies: {
+                    [COOKIE_NAME.NONCE]: nonce.hex,
+                    [COOKIE_NAME.SESSION.ANONYMOUS]: cipherPayload.hex
+                }
+            };
+
+            // Retrieve the clear payload
+            gladosCookies.configure( sessionKey, sodium );
+            const clearText = gladosCookies.getAnonSessionCookie( request );
+            expect( clearText ).to.equal( plainPayload.string );
+        } );
+
+        it( 'returns an object if the payload is a JSON string' );
+
+        // TODO --> Start here <-- Which of these works better with Flow?
+        it( 'returns `undefined` if the Request object does not have an anonymous session cookie' );
+        it.skip( 'throws an Error if the Request object does not have an anonymous session cookie', function() {
+            const request = {};
+            expect( function() {
+                gladosCookies.getAnonSessionCookie( request );
+            } ).to.throw( Error, 'some message' );
+        } );
+    } );
+
+    it( 'has a function `getSecureSessionCookie` that' );
+
     context( 'has a function `hasAnonSessionCookie` that', function() {
         it( 'returns `true` if the Request object has an anonymous session cookie and a nonce cookie', function() {
             const request = {
@@ -128,40 +155,10 @@ describe.only( 'Glados includes a Cookie module that', function() {
         } );
     } );
 
-    context( 'has a function `getAnonSessionCookie` that', function() {
-        const sessionKey = sodium.newKey();
-
-        it( 'returns the cookie payload if the Request object has an anonymous session cookie', function() {
-            // Create an encrypted payload for the cookie
-            const nonce = sodium.newNonce();
-            const plainPayload = sodium.clearFromString( 'Remove the Stone of Shame. Attach the Stone of Triumph!' );
-            const cipherPayload = plainPayload.encrypt( sessionKey, nonce );
-            const request = {
-                cookies: {
-                    [COOKIE_NAME.NONCE]: nonce.hex,
-                    [COOKIE_NAME.SESSION.ANONYMOUS]: cipherPayload.hex
-                }
-            };
-
-            // Retrieve the clear payload
-            gladosCookies.configure( sessionKey, sodium );
-            const clearText = gladosCookies.getAnonSessionCookie( request );
-            expect( clearText ).to.equal( plainPayload.string );
-        } );
-
-        it( 'returns an object if the payload is a JSON string' );
-
-        // TODO Which of these works better with Flow?
-        it( 'returns `undefined` if the Request object does not have an anonymous session cookie' );
-        it.skip( 'throws an Error if the Request object does not have an anonymous session cookie', function() {
-            const request = {};
-            expect( function() {
-                gladosCookies.getAnonSessionCookie( request );
-            } ).to.throw( Error, 'some message' );
-        } );
-    } );
+    it( 'has a function `hasSecureSessionCookie` that' );
 
     context.skip( 'has a function `removeAnonSessionCookie` that', function() {
+        // TODO --> Start here <--
         it( 'returns `true` if the Request object has an anonymous session cookie', function() {
             const request = {
                 cookies: {
@@ -178,6 +175,8 @@ describe.only( 'Glados includes a Cookie module that', function() {
             expect( result ).to.equal( false );
         } );
     } );
+
+    it( 'has a function `removeSecureSessionCookie` that' );
 
     context( 'has a function `setAnonSessionCookie` that', function() {
         const payload = 'i-am-a-secret';
@@ -231,9 +230,6 @@ describe.only( 'Glados includes a Cookie module that', function() {
         } );
     } );
 
-    it( 'has a function `hasSecureSessionCookie` that' );
-    it( 'has a function `getSecureSessionCookie` that' );
-    it( 'has a function `removeSecureSessionCookie` that' );
     context( 'has a function `setSecureSessionCookie` that', function() {
         it( 'encrypts data before sending to the client' );
         it( 'signs data before sending to the client' );
