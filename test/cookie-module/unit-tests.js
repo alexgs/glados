@@ -110,7 +110,44 @@ describe.only( 'Glados includes a Cookie module that', function() {
             } );
         } );
         
-        it( 'decrypts secure session data received from the client' );
+        it( 'decrypts secure session data received from the client', function( done ) {
+            // Create an encrypted payload for the cookie
+            const nonce = sodium.newNonce();
+            const payloadObject = {
+                fionaApple: 'Criminal',
+                lit: 'My Own Worst Enemy',
+                theSofties: 'Charms around Your Wrist',
+                theSugarcubes: 'Hit'
+            };
+            const plainPayload = sodium.clearFromObject( payloadObject );
+            const cipherPayload = plainPayload.encrypt( sessionKey, nonce );
+            const request = {
+                headers: {
+                    cookie: [
+                        `${stringCookieName}=${stringCookieValue}`,
+                        `${COOKIE_NAME.NONCE}=${nonce.hex}`,
+                        `${jsonCookieName}=${jsonCookieValue}`,
+                        `${COOKIE_NAME.SESSION.SECURE}=${cipherPayload.hex}`
+                    ].join(';')
+                }
+            };
+            const response = {};
+
+            const middleware = gladosCookies.getMiddleware();
+            middleware( request, response, () => {
+                // Test handling of other cookies
+                expect( _.isPlainObject( request.cookies ) ).to.equal( true );
+                expect( _.has( request.cookies, stringCookieName ) ).to.equal( true );
+                expect( request.cookies[ stringCookieName ] ).to.equal( stringCookieValue );
+                expect( _.has( request.cookies, jsonCookieName ) ).to.equal( true );
+                expect( request.cookies[ jsonCookieName ] ).to.deep.equal( jsonCookieData );
+
+                // Test handling of the anonymous session cookie
+                const clearObject = request.cookies[ COOKIE_NAME.SESSION.SECURE ];
+                expect( clearObject ).to.deep.equal( plainPayload.json );
+                done();
+            } );
+        } );
 
         it( 'throws an error if the client sends *both* anonymous and secure session cookies' );
     } );
