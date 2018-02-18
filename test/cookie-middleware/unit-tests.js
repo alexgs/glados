@@ -97,9 +97,87 @@ describe.only( 'Glados includes a Cookie module that', function() {
         it( 'verifies data received from the client' );
     } );
 
-    it( 'has a function `hasAnonSessionCookie` that' );
-    it( 'has a function `getAnonSessionCookie` that' );
-    it( 'has a function `removeAnonSessionCookie` that' );
+    context( 'has a function `hasAnonSessionCookie` that', function() {
+        it( 'returns `true` if the Request object has an anonymous session cookie and a nonce cookie', function() {
+            const request = {
+                cookies: {
+                    [COOKIE_NAME.NONCE]: 'Mimsy were the mome raths.',
+                    [COOKIE_NAME.SESSION.ANONYMOUS]: 'this is a false statement'
+                }
+            };
+            const result = gladosCookies.hasAnonSessionCookie( request );
+            expect( result ).to.equal( true );
+        } );
+
+        it( 'returns `false` if the Request object is missing an anonymous session cookie or a nonce cookie', function() {
+            const request = {};
+            const noCookies = gladosCookies.hasAnonSessionCookie( request );
+            expect( noCookies ).to.equal( false );
+
+            request.cookies = {
+                [COOKIE_NAME.SESSION.ANONYMOUS]: 'this is a false statement'
+            };
+            const missingNonceCookie = gladosCookies.hasAnonSessionCookie( request );
+            expect( missingNonceCookie ).to.equal( false );
+
+            request.cookies = {
+                [COOKIE_NAME.NONCE]: 'Mimsy were the mome raths.'
+            };
+            const missingSessionCookie = gladosCookies.hasAnonSessionCookie( request );
+            expect( missingSessionCookie ).to.equal( false );
+        } );
+    } );
+
+    context( 'has a function `getAnonSessionCookie` that', function() {
+        const sessionKey = sodium.newKey();
+
+        it( 'returns the cookie payload if the Request object has an anonymous session cookie', function() {
+            // Create an encrypted payload for the cookie
+            const nonce = sodium.newNonce();
+            const plainPayload = sodium.clearFromString( 'Remove the Stone of Shame. Attach the Stone of Triumph!' );
+            const cipherPayload = plainPayload.encrypt( sessionKey, nonce );
+            const request = {
+                cookies: {
+                    [COOKIE_NAME.NONCE]: nonce.hex,
+                    [COOKIE_NAME.SESSION.ANONYMOUS]: cipherPayload.hex
+                }
+            };
+
+            // Retrieve the clear payload
+            gladosCookies.configure( sessionKey, sodium );
+            const clearText = gladosCookies.getAnonSessionCookie( request );
+            expect( clearText ).to.equal( plainPayload.string );
+        } );
+
+        it( 'returns an object if the payload is a JSON string' );
+
+        // TODO Which of these works better with Flow?
+        it( 'returns `undefined` if the Request object does not have an anonymous session cookie' );
+        it.skip( 'throws an Error if the Request object does not have an anonymous session cookie', function() {
+            const request = {};
+            expect( function() {
+                gladosCookies.getAnonSessionCookie( request );
+            } ).to.throw( Error, 'some message' );
+        } );
+    } );
+
+    context.skip( 'has a function `removeAnonSessionCookie` that', function() {
+        it( 'returns `true` if the Request object has an anonymous session cookie', function() {
+            const request = {
+                cookies: {
+                    [COOKIE_NAME.SESSION.ANONYMOUS]: 'this is a false statement'
+                }
+            };
+            const result = gladosCookies.hasAnonSessionCookie( request );
+            expect( result ).to.equal( true );
+        } );
+
+        it( 'returns `false` if the Request object does not have an anonymous session cookie', function() {
+            const request = {};
+            const result = gladosCookies.hasAnonSessionCookie( request );
+            expect( result ).to.equal( false );
+        } );
+    } );
 
     context( 'has a function `setAnonSessionCookie` that', function() {
         const payload = 'i-am-a-secret';
