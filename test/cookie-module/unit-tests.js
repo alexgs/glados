@@ -110,15 +110,37 @@ describe.only( 'Glados includes a Cookie module that', function() {
             expect( clearText ).to.equal( plainPayload.string );
         } );
 
-        it( 'returns an object if the payload is a JSON string' );
+        it( 'returns an object if the payload is a JSON string', function() {
+            // Create an encrypted payload for the cookie
+            const nonce = sodium.newNonce();
+            const payloadObject = {
+                fionaApple: 'Criminal',
+                lit: 'My Own Worst Enemy',
+                theSofties: 'Charms around Your Wrist',
+                theSugarcubes: 'Hit'
+            };
+            const plainPayload = sodium.clearFromObject( payloadObject );
+            const cipherPayload = plainPayload.encrypt( sessionKey, nonce );
+            const request = {
+                cookies: {
+                    [COOKIE_NAME.NONCE]: nonce.hex,
+                    [COOKIE_NAME.SESSION.ANONYMOUS]: cipherPayload.hex
+                }
+            };
 
-        // TODO --> Start here <-- Which of these works better with Flow?
-        it( 'returns `undefined` if the Request object does not have an anonymous session cookie' );
-        it.skip( 'throws an Error if the Request object does not have an anonymous session cookie', function() {
+            // Retrieve the clear payload
+            gladosCookies.configure( sessionKey, sodium );
+            const clearPayload = gladosCookies.getAnonSessionCookie( request );
+            expect( clearPayload ).to.deep.equal( plainPayload.json );
+        } );
+
+        it( 'throws an Error if the Request object does not have an anonymous session cookie', function() {
             const request = {};
+
+            gladosCookies.configure( sessionKey, sodium );
             expect( function() {
                 gladosCookies.getAnonSessionCookie( request );
-            } ).to.throw( Error, 'some message' );
+            } ).to.throw( Error, gladosCookies.messages.noSession( 'anonymous' ) );
         } );
     } );
 
