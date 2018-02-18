@@ -6,7 +6,7 @@ import _ from 'lodash';
 import ms from 'ms';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import sodium from '@philgs/sodium';
+import sodium, * as crypto from '@philgs/sodium';
 
 import gladosCookies from '../../lib/cookies';
 import { COOKIE_NAME } from '../../lib/constants';
@@ -18,25 +18,26 @@ chai.use( chaiAsPromised );
 chai.use( dirtyChai );
 
 describe.only( 'Glados includes a Cookie module that', function() {
+
+    afterEach( function() {
+        gladosCookies._reset();
+    } );
+
     context( 'has a `configure` function, which', function() {
 
-        beforeEach( function() {
-            gladosCookies._reset();
-        } );
-
         it( 'accepts a `sessionKey` parameter that is used for encrypting session cookies', function() {
-            const sessionKey = sodium.key();
+            const sessionKey = crypto.key();
             gladosCookies.configure( sessionKey );
             expect( gladosCookies.getSessionKey() ).to.equal( sessionKey );
         } );
 
         it( 'accepts a `cookieCrypto` parameter that provides a library of cryptographic functions', function() {
-            const sessionKey = sodium.key();
-            gladosCookies.configure( sessionKey, sodium );
-            expect( gladosCookies.getCrypto() ).to.equal( sodium );
+            const sessionKey = crypto.key();
+            gladosCookies.configure( sessionKey, crypto );
+            expect( gladosCookies.getCrypto() ).to.equal( crypto );
         } );
 
-        it( 'throws an error if the `sessionKey` is the wrong length', function() {
+        it.skip( 'throws an error if the `sessionKey` is the wrong length', function() {
             const sessionKey = Buffer.from( 'I am a bad key.' );
             expect( function() {
                 gladosCookies.configure( sessionKey );
@@ -105,24 +106,22 @@ describe.only( 'Glados includes a Cookie module that', function() {
         const response = {
             cookie: ( name, value, options ) => undefined
         };
-        const sessionKey = sodium.key();
+        const sessionKey = sodium.newKey();
         const sandbox = sinon.createSandbox();
-
 
         beforeEach( function() {
             gladosCookies.configure( sessionKey, sodium );
             sandbox.spy( response, 'cookie' );
-            sandbox.spy( sodium, 'encrypt' );
+            sandbox.spy( crypto, 'encrypt' );
         } );
 
         afterEach( function() {
-            gladosCookies._reset();
             sandbox.restore();
         } );
 
         it( 'encrypts the cookie payload', function() {
             gladosCookies.setAnonSessionCookie( response, payload );
-            expect( sodium.encrypt ).to.have.been.calledOnce();
+            expect( crypto.encrypt ).to.have.been.calledOnce();
         } );
 
         it( 'sends the payload to the client', function() {
@@ -136,13 +135,10 @@ describe.only( 'Glados includes a Cookie module that', function() {
             ) ).to.equal( true );
 
             // Decrypt the message
-            const cipher = Buffer.from( response.cookie.args[0][1], gladosCookies.PAYLOAD_ENCODING );
-            const nonce = Buffer.from( response.cookie.args[1][1], gladosCookies.PAYLOAD_ENCODING );
-            const jsonMessage = sodium.decrypt( cipher, nonce, sessionKey ).toString();
-
-            // Since the payload is always `JSON.stringify`'d, we must parse it to get the correct value
-            const clearMessage = JSON.parse( jsonMessage );
-            expect( clearMessage ).to.equal( payload );
+            const cipher = sodium.cipherFromHex( response.cookie.args[0][1] );
+            const nonce = sodium.nonceFromHex( response.cookie.args[1][1] );
+            const clear = cipher.decrypt( sessionKey, nonce );
+            expect( clear.string ).to.equal( payload );
         } );
 
         it( 'sends the encryption nonce to the client', function() {
