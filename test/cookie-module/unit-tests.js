@@ -23,7 +23,7 @@ describe.only( 'Glados includes a Cookie module that', function() {
         gladosCookies._reset();
     } );
 
-    context.only( 'provides a middleware function that', function() {
+    context( 'provides a middleware function that', function() {
         const jsonCookieName = 'json-cookie';
         const jsonCookieData = {
             type: 'chocolate chip',
@@ -198,15 +198,15 @@ describe.only( 'Glados includes a Cookie module that', function() {
 
     context( 'has a `configure` function that', function() {
         it( 'accepts a `sessionKey` parameter that is used for encrypting session cookies', function() {
-            const sessionKey = crypto.key();
+            const sessionKey = sodium.newKey();
             gladosCookies.configure( sessionKey );
             expect( gladosCookies.getSessionKey() ).to.equal( sessionKey );
         } );
 
         it( 'accepts a `cookieCrypto` parameter that provides a library of cryptographic functions', function() {
-            const sessionKey = crypto.key();
-            gladosCookies.configure( sessionKey, crypto );
-            expect( gladosCookies.getCrypto() ).to.equal( crypto );
+            const sessionKey = sodium.newKey();
+            gladosCookies.configure( sessionKey, sodium );
+            expect( gladosCookies.getCrypto() ).to.equal( sodium );
         } );
     } );
 
