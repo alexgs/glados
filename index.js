@@ -1,5 +1,6 @@
 // @flow
 import debugAgent from 'debug';
+import cookies from './lib/cookies';
 import oauth2 from './lib/oauth2';
 import session from './lib/session';
 import type { UserLookupData, GladosUser } from './lib/user-store';
@@ -11,11 +12,18 @@ import type { GladosOAuthOptions } from './lib/oauth2';
 // [2] Abstraction and in-memory, dev-only module for user data store
 // [3] Abstraction and in-memory, dev-only modules for other data stores (i.e. CSRF tokens and sessions)
 
+type AuthenticationResult = {
+    reason:string|null,
+    value:boolean
+};
 type GladosContext = {
     locals: { [name: string]: mixed }
 }
 type GladosRequest = $Request & {
-    session:mixed       // Replace with Session Object
+    session: {
+        isAuthenticated: GladosRequest => AuthenticationResult
+    },
+    user:?mixed         // TODO [2] >>> The user object can be expanded/better defined <<<
 };
 type GladosOptions = {
     expressApp: GladosContext,
@@ -33,8 +41,7 @@ function configure( options:GladosOptions ) {
 }
 
 function getCookieMiddleware() {
-    // TODO Copy the guts of the `cookie-parser` library here
-    // TODO [1] >>> Implement signing and encrypting cookies <<<
+    return cookies.getMiddleware();
 }
 
 function getSessionMiddleware() {
