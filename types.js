@@ -1,3 +1,4 @@
+import { COOKIE_NAME } from './lib/constants';
 
 export const Sodium = {
     Key: {
@@ -37,5 +38,25 @@ export const Glados = {
             'newNonce',
             'nonceFromHex',
         ]
+    },
+    Request: {
+        type: 'object',
+        properties: {
+            cookies: {
+                type: 'object',
+                properties: {
+                    [COOKIE_NAME.NONCE]: { type: 'string' },
+                    [COOKIE_NAME.SESSION.ANONYMOUS]: { type: [ 'object', 'string' ] },
+                    [COOKIE_NAME.SESSION.SECURE]: { type: [ 'object', 'string' ] }
+                }
+            },
+            session: {
+                type: 'object',
+                properties: {
+                    isAuthenticated: { instanceof: 'Function' }
+                }
+            },
+            user: { type: 'object' }        // TODO [2] >>> The user object can be expanded/better defined <<<
+        }
     }
 };
