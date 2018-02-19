@@ -39,6 +39,9 @@ export const Glados = {
             'nonceFromHex',
         ]
     },
+
+    CookiePayload: { type: [ 'object', 'string' ] },
+
     Request: {
         type: 'object',
         properties: {
@@ -57,6 +60,14 @@ export const Glados = {
                 }
             },
             user: { type: 'object' }        // TODO [2] >>> The user object can be expanded/better defined <<<
+        }
+    },
+
+    Response: {
+        type: 'object',
+        properties: {
+            clearCookie: { instanceof: 'Function' },
+            cookie: { instanceof: 'Function' }
         }
     }
 };

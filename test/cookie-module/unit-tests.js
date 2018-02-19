@@ -421,7 +421,7 @@ describe.only( 'Glados includes a Cookie module that', function() {
         } );
 
         it( 'throws an error if the Request object does not have an anonymous session cookie', function() {
-            request = {};
+            request = { cookies: {} };
             gladosCookies.configure( sessionKey, sodium );
 
             expect( function() {
@@ -469,7 +469,7 @@ describe.only( 'Glados includes a Cookie module that', function() {
         } );
 
         it( 'throws an error if the Request object does not have an secure session cookie', function() {
-            request = {};
+            request = { cookies: {} };
             gladosCookies.configure( sessionKey, sodium );
 
             expect( function() {
